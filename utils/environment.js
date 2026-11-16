@@ -26,7 +26,6 @@ function validateEnvironment(env = process.env) {
   } else errors.push('Cần GOOGLE_SERVICE_ACCOUNT_BASE64 hoặc GOOGLE_SERVICE_ACCOUNT_FILE.');
   if (credentials && (!credentials.client_email || !credentials.private_key)) errors.push('Credentials Google thiếu client_email hoặc private_key.');
   if (!env.GEMINI_API_KEY) warnings.push('Chưa có GEMINI_API_KEY: AI và dịch chưa hoạt động.');
-  if (!env.CONG_DUC_CHANNEL_ID) warnings.push('Chưa chọn kênh Sảnh Công Đức.');
   if (!env.TEMP_VOICE_LOBBY_CHANNEL_ID) warnings.push('Chưa chọn kênh cổng voice tạm.');
   if (!env.CLOUDINARY_CLOUD_NAME || !env.CLOUDINARY_API_KEY || !env.CLOUDINARY_API_SECRET) warnings.push('Chưa đủ Cloudinary: chức năng upload ảnh chưa sẵn sàng.');
   if (env.PORT && (!/^\d+$/.test(env.PORT) || Number(env.PORT) < 1 || Number(env.PORT) > 65535)) errors.push('PORT phải từ 1 đến 65535.');

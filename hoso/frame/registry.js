@@ -25,7 +25,7 @@ const hasPart = (id, part) => Boolean(styles[id] && styles[id][PART_EXPORT[part]
 // { colors:[ids], crest:[ids], border:[ids], side:[ids], bottom:[ids], accents:[ids] } — dùng làm menu chọn từng phần.
 function listParts() {
   const out = {};
-  // Khung `auto: true` (cd_lienhoa: tự đổi bậc theo cảnh giới, chỉ dùng cho /hosocd) không hiện trong menu chọn khung.
+  // Khung `auto: true` không hiện trong menu chọn khung.
   for (const part of Object.keys(PART_EXPORT)) out[part] = Object.keys(styles).filter((id) => !styles[id].auto && hasPart(id, part));
   return out;
 }

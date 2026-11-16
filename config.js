@@ -31,9 +31,8 @@
 //   - config/knowledge.js        : Kho kiến thức bang cho AI (tab "Kiến thức bang": AI chỉ trả lời kiến thức game theo kho)
 //   - config/backup.js           : Sao lưu Google Sheet hằng ngày sang folder Drive (BACKUP_DRIVE_FOLDER_ID)
 //   - config/healthCheck.js      : Kiểm tra sức khỏe tự động mỗi ngày (Sheet/Cloudinary/Gemini) báo vào kênh admin
-//   - config/congDuc.js          : Farm Công Đức — ngồi voice nghe gõ mõ, thắp/đốt hương, Cảnh Giới, Cửa hàng Công Đức
 //   - config/featureFlags.js     : Công tắc bật/tắt tính năng vui/giải trí (tab Sheet "Công Tắc Tính Năng", chỉnh trên web Monaris Admin)
-//   - config/loveRoom.js         : Phòng Đôi — kênh cổng riêng, role bot nhạc, giới hạn 2 người, cơ chế "cho thuê" trừ Công Đức/phút
+//   - config/loveRoom.js         : Phòng Đôi — kênh cổng riêng, role bot nhạc, giới hạn 2 người
 //   - config/teamRole.js         : Role team cho bảng xếp đội hình — 5 role dùng chung 3 đội hình, tab "Team Role", chốt an toàn, số lệnh song song
 
 module.exports = {
@@ -66,7 +65,6 @@ module.exports = {
   ...require('./config/backup'),
   ...require('./config/healthCheck'),
   ...require('./config/pickRole'),
-  ...require('./config/congDuc'),
   ...require('./config/loveRoom'),
   ...require('./config/featureFlags'),
   ...require('./config/shop'),

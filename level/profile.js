@@ -676,7 +676,7 @@ function frameModal(userId, modalKey, themeKey) {
   return modal;
 }
 
-// Bước 1 của 🧩 Khung thẻ: tin ẩn có ô chọn CHỦ ĐỀ (Cơ bản, 6 chủ đề shop, Cửu Long, Công Đức); chọn xong mới mở hộp thoại của chủ đề đó.
+// Bước 1 của 🧩 Khung thẻ: tin ẩn có ô chọn CHỦ ĐỀ; chọn xong mới mở hộp thoại của chủ đề đó.
 function frameThemeReply(userId) {
   const cur = frameChoice.deserialize((profiles.get(userId) || {}).frame);
   const now = frameChoice.currentTheme(cur);

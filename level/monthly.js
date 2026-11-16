@@ -11,7 +11,6 @@ const { LEVEL_ENABLED, LEVEL_ANNOUNCE_CHANNEL_ID, LEVEL_MONTHLY_POST_ENABLED, LE
 const sheet = require('../googleSheets/levelMonthSheet');
 const { fmtVan } = require('../utils/numberFormat');
 const dormant = require('./dormant');
-const expExclude = require('./expExclude'); // loại EXP thưởng đốt hương (congDuc/) khỏi mốc tháng
 
 const POST_HOUR = Number.isInteger(Number(process.env.LEVEL_MONTHLY_POST_HOUR)) && String(process.env.LEVEL_MONTHLY_POST_HOUR || '').trim() !== '' && Number(process.env.LEVEL_MONTHLY_POST_HOUR) >= 0 && Number(process.env.LEVEL_MONTHLY_POST_HOUR) <= 23
   ? Number(process.env.LEVEL_MONTHLY_POST_HOUR)
@@ -47,7 +46,7 @@ function liveRows() {
     out.push({
       id: m.id,
       name: m.name || '',
-      exp: expExclude.adjust(m.exp, m.id),
+      exp: m.exp,
       msgs: MSG_KEYS.reduce((n, k) => n + (Number(counts[k]) || 0), 0),
       voice: Number(counts.voice) || 0,
       streak: Number(m.streak) || 0,
@@ -99,7 +98,6 @@ function buildMonthlyEmbed(title, rows, size, footer) {
 // ---- Chụp ảnh đầu tháng + đăng báo cáo ----
 async function tick() {
   if (!LEVEL_ENABLED || !deps || !deps.isLoaded() || busy) return;
-  if (!expExclude.isReady()) return; // chờ Công Đức nạp xong để mốc không chứa EXP hương
   busy = true;
   try {
     const cur = monthKey();

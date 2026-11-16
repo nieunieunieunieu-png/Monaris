@@ -17,8 +17,7 @@ const autoEnabled = () => FRAME_AUTO_LADDER.length > 0;
 // Khi cửa hàng TẮT (SHOP_ENABLED=false) thì quay về cách cũ: khoá cứng ở cấp 9999 để không ai dùng miễn phí.
 // Admin vẫn có thể mở 1 id theo cấp bằng PROFILE_FRAME_UNLOCK (vd shop_bang=5) — khai báo kiểu này thay luôn việc kiểm tra sở hữu cho id đó.
 const SHOP_FRAME_DEFAULT_LOCK_LEVEL = 9999;
-const isCdFrame = (id) => String(id || '').startsWith('cd_'); // khung Cửa hàng Công Đức (congDuc/catalog.js): cũng khoá theo SỞ HỮU
-const isShopFrame = (id) => String(id || '').startsWith('shop_') || isCdFrame(id);
+const isShopFrame = (id) => String(id || '').startsWith('shop_');
 const hasUnlockOverride = (id) => Object.prototype.hasOwnProperty.call(FRAME_UNLOCK_LEVELS, id);
 const unlockLevel = (id) => {
   if (id === DEFAULT_ID) return 0;
@@ -60,4 +59,4 @@ function autoStyleFor(part, level) {
   return DEFAULT_ID;
 }
 
-module.exports = { AUTO_ID, autoEnabled, unlockLevel, isLocked, isShopFrame, isCdFrame, shopLocked, isBoosterOnly, boosterLocked, autoStyleFor, ladder: () => FRAME_AUTO_LADDER.map((s) => ({ ...s })) };
+module.exports = { AUTO_ID, autoEnabled, unlockLevel, isLocked, isShopFrame, shopLocked, isBoosterOnly, boosterLocked, autoStyleFor, ladder: () => FRAME_AUTO_LADDER.map((s) => ({ ...s })) };

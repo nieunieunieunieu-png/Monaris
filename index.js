@@ -22,6 +22,7 @@ process.env.FONTCONFIG_PATH = require('path').join(__dirname, 'assets', 'fonts')
 }
 const { Events } = require('discord.js');
 const http = require('http');
+const { ENABLED } = require('./config/lite');
 
 const client = require('./client');
 // Các module của Monaris
@@ -77,7 +78,6 @@ const { startDailyBackup } = require('./backup');
 const { startKeywordFilter } = require('./keywordFilter');
 const { startAntiSpam } = require('./antiSpam');
 const { startLevel, LEVEL_SLASH_COMMANDS } = require('./level');
-const { startCongDuc, CONG_DUC_SLASH_COMMANDS } = require('./congDuc');
 const { HOSO_SLASH_COMMANDS, startManualAchievements } = require('./hoso');
 const { SHOP_SLASH_COMMANDS, startShop } = require('./shop'); // cửa hàng khung hồ sơ (/shopkhung, /shopcap)
 const { CUSTOM_ACHIEVEMENT_SLASH_COMMANDS, startCustomAchievements } = require('./hoso/customAchievement');
@@ -353,13 +353,15 @@ for (const command of PHOBAN12_SLASH_COMMANDS) {
       await deferredStep('startAntiSpam', () => startAntiSpam(authClient));
       await deferredStep('startTempVoice', () => startTempVoice());
       // Level/EXP: tạo tab Level + Cấu Hình EXP + Bảng Cấp Độ, nạp dữ liệu rồi bật vòng ghi Sheet theo lô.
-      await deferredStep('startLevel', () => startLevel());
-      // Farm Công Đức: nạp tab "Công Đức", bật tích voice (phòng bot treo) + tiếng Cốc Cốc. Phải SAU startLevel (Đốt hương cần Level đã nạp).
-      await deferredStep('startCongDuc', () => startCongDuc());
+      if (ENABLED.LEVEL) {
+  await deferredStep('startLevel', () => startLevel());
+}
       // Pick Role bằng react (hệ phái + hoạt động): nạp tab "Pick Role", đăng/đồng bộ 2 tin trong PICK_ROLE_CHANNEL_ID.
       // Role team (xếp đội hình): tạo tab "Team Role" + kiểm tra 5 role (tên/quyền) và chỉ log cảnh báo, không tự sửa.
       // Cửa hàng khung hồ sơ: tạo tab "Shop Khung" + nạp khung đã sở hữu (khung shop_* chỉ chọn được khi đã mua, xem hoso/frame/levelRules.js).
-      await deferredStep('startShop', () => startShop());
+      if (ENABLED.SHOP) {
+        await deferredStep('startShop', () => startShop());
+      }
       // Thành Tựu Đặt Tay (chọn từ danh sách có sẵn qua /profile): tạo tab "Thành Tựu Đặt Tay" + nạp cache RAM.
       await deferredStep('startManualAchievements', () => startManualAchievements());
       // Thành Tựu Riêng (/themthanhtuu, /suathanhtuu, /xoathanhtuu, /dsthanhtuu): gõ tự do, chỉ 1 người được dùng lệnh.

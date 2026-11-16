@@ -8,7 +8,7 @@
 // Chặn tập trung cho slash/nút/menu: features/gate.js. Tin nhắn/sự kiện thì từng tính năng tự gọi isEnabled().
 
 const { FEATURES } = require('./registry');
-// Nạp Sheet theo kiểu lazy: congDuc/core.js, hoangDao.js, queXam.js... là logic thuần, gọi isEnabled() không được kéo theo googleapis.
+// Nạp Sheet theo kiểu lazy để gọi isEnabled() không kéo theo googleapis.
 const sheet = () => require('../googleSheets/featureFlagSheet');
 
 const byId = new Map(FEATURES.map((f) => [f.id, f]));

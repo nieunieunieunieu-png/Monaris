@@ -28,8 +28,7 @@
 //     VoiceStateUpdate để đá ngay bất kỳ ai/bot thứ 2 lọt vào ngoài ý muốn.
 //   - Mặc định phòng KHOÁ (mọi người vẫn THẤY nhưng không vào được) trừ bot nhạc luôn vào được dù khoá.
 //   - Menu giống phòng thường, chỉ thay nút "👥 Giới hạn" bằng "💘 Mời vào voice" (giới hạn đã cố định).
-//   - Cơ chế "cho thuê": mỗi phút có mặt trong Phòng Đôi, mỗi người bị trừ LOVE_ROOM_RENT_PER_MINUTE Công
-//     Đức; không đủ trừ thì phần thiếu cộng ngược vào điểm Sám Hối (core.deductMerit + core.addRepent).
+//   - Thống kê thời gian các cặp ngồi cùng nhau được ghi vào Google Sheet.
 //   - 💔 "Về phòng thường" (chỉ chủ phòng bấm, không cần ai xác nhận): bỏ 💕, mở khoá, trả giới hạn người, hết tính phí. Không có
 //     ngoại lệ riêng — nếu SAU ĐÓ vẫn chỉ đúng 2 người ngồi liên tục LOVE_ROOM_AUTO_DETECT_MINUTES phút (không có người thứ 3 vào)
 //     thì cơ chế auto-detect sẽ tự đưa phòng về Phòng Đôi; có người thứ 3 vào thì đếm lại từ đầu.
@@ -59,8 +58,6 @@ const {
   MUSIC_BOT_ROLE_ID,
   LOVE_ROOM_PREFIX,
   LOVE_ROOM_SLOT_LIMIT,
-  LOVE_ROOM_RENT_PER_MINUTE,
-  LOVE_ROOM_RENT_TICK_MS,
   LOVE_ROOM_AUTO_DETECT_MINUTES,
   LOVE_ROOM_AUTO_DETECT_MS,
   LOVE_ROOM_AUTO_CHECK_MS,
@@ -100,13 +97,14 @@ const creating = new Set(); // userId đang được tạo phòng (chống tạo
 
 // ----- Riêng cho Phòng Đôi -----
 const loveRoomIds = new Set(); // channelId các phòng đang là Phòng Đôi (sống trong RAM — khôi phục lại lúc khởi động từ tiền tố tên)
-const lovePartner = new Map(); // channelId -> userId người được chủ phòng mời (chỉ 1 người, "cho thuê" thu cả chủ phòng lẫn người này)
+const lovePartner = new Map(); // channelId -> userId người được chủ phòng mời
 const closingLove = new Set(); // channelId đang trong thời gian chờ xoá vì chủ Phòng Đôi đã thoát
 const OWNER_LEFT_DELETE_DELAY_MS = 60 * 1000;
 const pairSince = new Map(); // channelId -> { key: "id1|id2", since: ts } — chống gian lận: theo dõi cặp 2 người ngồi chung liên tục
-let loveRentTimer = null;
+let lovePairMinutesTimer = null;
 let loveStatsTimer = null;
 const LOVE_STATS_FLUSH_MS = 5 * 60 * 1000; // ghi thống kê lên sheet mỗi 5 phút (bot restart đột ngột có thể mất tối đa ~5 phút)
+const LOVE_PAIR_COUNT_TICK_MS = 60 * 1000;
 let autoLoveTimer = null;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -183,7 +181,7 @@ function buildMenu(channel, ownerName, mentionId, isLove = isLoveRoom(channel)) 
 
   const loveLines = isLove
     ? `\n💕 **Phòng Đôi** — chỉ chủ phòng + 1 người được 💘 mời + 1 bot nhạc được vào. Mặc định **khoá** (ai cũng thấy, không ai vào được trừ người được mời & bot nhạc).\n` +
-      `💸 Mỗi phút ngồi trong phòng: **-${LOVE_ROOM_RENT_PER_MINUTE} Công Đức**/người (không đủ thì phần thiếu cộng ngược vào điểm Sám Hối).\n` +
+      `⏱️ Thời gian các cặp ngồi cùng nhau được tính vào bảng xếp hạng Phòng Đôi.\n` +
       `💔 Muốn ngồi chung với nhiều người? Bấm **Về phòng thường** — nhưng nếu sau đó vẫn chỉ 2 người ngồi liên tục **${LOVE_ROOM_AUTO_DETECT_MINUTES} phút** (không có người thứ 3) thì phòng tự về Phòng Đôi.\n`
     : '';
 
@@ -463,10 +461,9 @@ async function enforceLoveRoomCap(channel) {
   }
 }
 
-// ---------------------------------------------------------------- Chống gian lận: tự phát hiện "cặp đôi núp bóng phòng thường"
-// Né kênh cổng Phòng Đôi, tạo/qua phòng voice tạm THƯỜNG rồi kéo nhau 2 người ngồi chung để khỏi bị trừ Công Đức ->
-// quét mỗi LOVE_ROOM_AUTO_CHECK_MS, phòng nào đúng 2 người thật ngồi chung LIÊN TỤC (vẫn cho thêm 1 bot, vd bot nhạc)
-// đủ LOVE_ROOM_AUTO_DETECT_MINUTES phút thì TỰ chuyển thành Phòng Đôi (thêm 💕, khoá phòng, bắt đầu tính phí).
+// ---------------------------------------------------------------- Tự nhận diện cặp đôi ngồi lâu trong phòng thường
+// Quét mỗi LOVE_ROOM_AUTO_CHECK_MS, phòng nào đúng 2 người thật ngồi chung LIÊN TỤC (vẫn cho thêm 1 bot, vd bot nhạc)
+// đủ LOVE_ROOM_AUTO_DETECT_MINUTES phút thì TỰ chuyển thành Phòng Đôi (thêm 💕 và khoá phòng).
 
 // Cặp 2 người thật đang ngồi trong phòng (nếu có bot thì vẫn được, chỉ không tính bot) -> "id nhỏ|id lớn" để so sánh ổn định; khác 2 người -> null.
 function pairKeyOf(channel) {
@@ -509,8 +506,7 @@ async function convertToLoveRoom(channel, ownerId, pairKey) {
     .send({
       content:
         `💕 Phát hiện **<@${ownerId}>** và **<@${partnerId}>** ngồi chung phòng liên tục quá **${LOVE_ROOM_AUTO_DETECT_MINUTES} phút** — ` +
-        `hệ thống đã TỰ chuyển phòng này thành **Phòng Đôi** 💕 (khoá phòng, chỉ 2 người + bot nhạc vào được) và bắt đầu tính phí ` +
-        `**-${LOVE_ROOM_RENT_PER_MINUTE} Công Đức/phút/người** (không đủ Công Đức thì cộng ngược vào Sám Hối). Menu điều khiển mới:`,
+        `hệ thống đã TỰ chuyển phòng này thành **Phòng Đôi** 💕 (khoá phòng, chỉ 2 người + bot nhạc vào được). Menu điều khiển mới:`,
       allowedMentions: { users: [ownerId, partnerId] },
     })
     .catch(logErr('báo tự chuyển Phòng Đôi'));
@@ -571,27 +567,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   }
 });
 
-// ---------------------------------------------------------------- Phòng Đôi — cơ chế "cho thuê" (trừ Công Đức/phút)
-
-function chargeLoveRent(userId, name) {
-  try {
-    const core = require('../congDuc/core');
-    const rec = core.rollDay(core.getRecord(userId, name));
-    const taken = core.deductMerit(rec, LOVE_ROOM_RENT_PER_MINUTE);
-    const remain = Math.max(0, LOVE_ROOM_RENT_PER_MINUTE - taken);
-    if (remain > 0) core.addRepent(rec, remain);
-    if (taken > 0 || remain > 0) {
-      const parts = [];
-      if (taken > 0) parts.push(`-${taken} Công Đức`);
-      if (remain > 0) parts.push(`+${remain} Sám Hối (không đủ Công Đức để trừ)`);
-      require('../activityLog').logActivity(`💕 [phòng đôi] <@${userId}> ngồi Phòng Đôi: ${parts.join(', ')}`);
-    }
-  } catch (error) {
-    console.error('[tempVoice] Lỗi trừ Công Đức "cho thuê" Phòng Đôi:', error && error.message ? error.message : error);
-  }
-}
-
-// Mỗi phút: Phòng Đôi nào đang có ĐÚNG 2 người thật ngồi cùng -> cộng 1 phút cho cặp đó (không phụ thuộc Công Đức bật/tắt).
+// Mỗi phút: Phòng Đôi nào đang có ĐÚNG 2 người thật ngồi cùng -> cộng 1 phút cho cặp đó.
 function countLovePairMinutes() {
   try {
     for (const channelId of loveRoomIds) {
@@ -604,26 +580,6 @@ function countLovePairMinutes() {
     }
   } catch (error) {
     console.error('[tempVoice] Lỗi đếm thống kê Phòng Đôi:', error && error.message ? error.message : error);
-  }
-}
-
-function tickLoveRent() {
-  countLovePairMinutes();
-  try {
-    const cfg = require('../config/congDuc');
-    const core = require('../congDuc/core');
-    if (!cfg.CONG_DUC_ENABLED || !core.isLoaded()) return;
-    for (const channelId of [...loveRoomIds]) {
-      const channel = client.channels.cache.get(channelId);
-      if (!channel) {
-        loveRoomIds.delete(channelId);
-        lovePartner.delete(channelId);
-        continue;
-      }
-      for (const m of humansIn(channel).values()) chargeLoveRent(m.id, m.displayName || m.user.username);
-    }
-  } catch (error) {
-    console.error('[tempVoice] Lỗi vòng lặp "cho thuê" Phòng Đôi:', error && error.message ? error.message : error);
   }
 }
 
@@ -653,9 +609,9 @@ async function startTempVoice() {
       if (humansIn(channel).size === 0) scheduleEmptyDelete(channel);
     }
   }
-  if (LOVE_ROOM_ENABLED && !loveRentTimer) {
-    loveRentTimer = setInterval(tickLoveRent, LOVE_ROOM_RENT_TICK_MS);
-    if (loveRentTimer.unref) loveRentTimer.unref();
+  if (LOVE_ROOM_ENABLED && !lovePairMinutesTimer) {
+    lovePairMinutesTimer = setInterval(countLovePairMinutes, LOVE_PAIR_COUNT_TICK_MS);
+    if (lovePairMinutesTimer.unref) lovePairMinutesTimer.unref();
   }
   if (LOVE_ROOM_ENABLED && !loveStatsTimer) {
     loveStatsTimer = setInterval(() => flushLoveStats().catch(logErr('ghi thống kê Phòng Đôi')), LOVE_STATS_FLUSH_MS);
@@ -892,7 +848,7 @@ async function applyInvite(interaction, channel, ownerId) {
     .send({
       content:
         `💘 **${ownerName}** mời bạn vào **Phòng Đôi** 💕 **${channel.name}** ở server **${channel.guild.name}**.\n` +
-        `Bấm nút bên dưới để vào phòng voice. (Phòng Đôi tính phí **${LOVE_ROOM_RENT_PER_MINUTE} Công Đức/phút**/người khi cả hai ngồi trong phòng.)`,
+        `Bấm nút bên dưới để vào phòng voice. Thời gian hai người ngồi cùng nhau được ghi vào bảng xếp hạng Phòng Đôi.`,
       components: [
         new ActionRowBuilder().addComponents(new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(roomUrl).setLabel('Vào Phòng Đôi').setEmoji('💕')),
       ],

@@ -177,11 +177,4 @@ function appendLedger({ userId, event, points, note }) {
   return job;
 }
 
-// Sổ đã có dòng "Đốt hương ..." với đúng ghi chú `note` (cột F) của người này chưa — để thử lại không trừ điểm lần 2 (congDuc/incense.js).
-async function hasLedgerNote(userId, note) {
-  const sheets = await getSheetsClient();
-  const res = await retryOnQuotaExceeded(() => sheets.spreadsheets.values.get({ spreadsheetId: LEVEL_SPREADSHEET_ID, range: `${q(LOG_TAB)}!B2:F`, valueRenderOption: 'UNFORMATTED_VALUE' }), { label: 'Lịch Sử Dùng Điểm (đọc)' });
-  return (res.data.values || []).some((r) => String(r[0] === undefined ? '' : r[0]).trim() === String(userId) && String(r[2] || '').startsWith('Đốt hương') && String(r[4] || '').trim() === note);
-}
-
-module.exports = { ensureShopTab, loadOwned, loadRanks, appendOwned, readPoints, appendLedger, hasLedgerEntry, hasLedgerNote };
+module.exports = { ensureShopTab, loadOwned, loadRanks, appendOwned, readPoints, appendLedger, hasLedgerEntry };

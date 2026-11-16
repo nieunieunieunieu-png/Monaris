@@ -97,17 +97,7 @@ async function loadQuanHe(userId) {
   return { triKy: triKy || null, suPhu: suPhu || null, deTu: deTu.filter(Boolean) };
 }
 
-// Cảnh Giới + tổng Công Đức (đọc RAM của congDuc/, không gọi Sheet). Chưa nạp xong / người này chưa có Công Đức -> null.
-function loadCongDuc(userId) {
-  try {
-    const core = require('../congDuc/core');
-    if (!core.isLoaded()) return null;
-    const rec = core.getRecord(String(userId), '', { create: false });
-    return rec && rec.total > 0 ? { realm: core.realmInfo(rec.total).name, total: rec.total, bestStreak: rec.bestStreak || 0 } : null;
-  } catch { return null; }
-}
-
-// Trả { ingame, className, level, thiKiem, bcstat, congDuc } — mục nào không có = null.
+// Trả { ingame, className, level, thiKiem, bcstat } — mục nào không có = null.
 async function collectHoso(userId) {
   const bang = await getMemberInfoByDiscordId(userId).catch(() => null);
   let ingame = (bang && bang.ingame) || '';
@@ -147,7 +137,6 @@ async function collectHoso(userId) {
     level: getLevelSnapshot(String(userId)),
     thiKiem,
     bcstat,
-    congDuc: loadCongDuc(userId),
     manualAchievements: getManualAchievements(userId),
     customAchievements: getCustomAchievements(userId),
   };

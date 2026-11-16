@@ -45,17 +45,15 @@ const parseTier = (v, legacy = false) => {
   else n = THEME_TIERS.findIndex((x) => x.name.toLowerCase() === t); // tên bậc chính -> bậc chính (step 0) đầu tiên cùng tên
   return validTier(n) ? { value: n } : { error: true };
 };
-// ===== SHOP-2: CHỦ ĐỀ khung — Discord chỉ nhận ≤ 25 mục/ô chọn, mà số khung đã vượt 40 (19 bán + 6 thưởng + 10 Cửu Long + khung cấp + Công Đức).
+// ===== SHOP-2: CHỦ ĐỀ khung — Discord chỉ nhận ≤ 25 mục/ô chọn, nên ô chọn được chia theo chủ đề.
 // Nên ô chọn khung được chia theo chủ đề: người dùng chọn chủ đề trước (profile.js), rồi mở hộp thoại chỉ gồm khung của chủ đề đó.
-// Chủ đề của 1 id: nhóm shop chứa nó (thành viên hoặc bộ thưởng) · `cuulong` (9 rồng + Chí Tôn) · `congduc` (cd_*) · còn lại `coban` (khung mặc định, khung mở theo cấp, booster).
+// Chủ đề của 1 id: nhóm shop chứa nó (thành viên hoặc bộ thưởng) · `cuulong` (9 rồng + Chí Tôn) · còn lại `coban` (khung mặc định, khung mở theo cấp, booster).
 const KEEP_ID = '__keep__'; // mục "Giữ nguyên" trong ô chọn khung của 1 chủ đề: không đổi phần này
 const THEME_BASIC = 'coban';
-const THEME_CONGDUC = 'congduc';
 const THEME_DEFS = () => [
   { key: THEME_BASIC, label: '🎖️ Cơ bản & theo cấp', description: 'Khung mặc định, mở theo cấp, booster' },
   ...SHOP_GROUPS.filter((g) => g.key !== 'cuulong').map((g) => ({ key: g.key, label: `${g.emoji} ${g.name}`, description: 'Khung mua ở /shopkhung' })),
   { key: 'cuulong', label: '🐲 Cửu Long Quy Nhất', description: '9 bộ rồng + Cửu Long Chí Tôn' },
-  { key: THEME_CONGDUC, label: '🪷 Công Đức', description: 'Khung mua ở /cuahangcongduc' },
 ];
 function themeOf(id) {
   const sid = String(id || '');
@@ -63,7 +61,7 @@ function themeOf(id) {
   if (CUULONG_IDS.includes(sid) || sid === CUULONG_SOLD_ID) return 'cuulong';
   const g = SHOP_GROUPS.find((x) => x.key !== 'cuulong' && (x.members.includes(sid) || x.bonus === sid));
   if (g) return g.key;
-  return rules.isCdFrame(sid) ? THEME_CONGDUC : THEME_BASIC;
+  return THEME_BASIC;
 }
 // Các chủ đề CÓ khung dùng được (đủ mọi thành phần của nhóm `group`); luôn có ít nhất 1 chủ đề (cơ bản). Mỗi chủ đề ≤ 23 khung (+ mặc định + tự động ≤ 25).
 function listThemes(group) {
@@ -158,7 +156,7 @@ function lockError(choice, level, userId) {
       continue;
     }
     if (rules.shopLocked(id, userId)) {
-      lines.push(`🛒 Khung **${styleName(id)}** bạn chưa sở hữu — mua ở \`${rules.isCdFrame(id) ? '/cuahangcongduc' : '/shopkhung'}\`${rules.isCdFrame(id) ? '' : ' (bộ thưởng 🎁 mở khi mua đủ 3 bộ cùng chủ đề)'}.`);
+      lines.push(`🛒 Khung **${styleName(id)}** bạn chưa sở hữu — mua ở \`/shopkhung\` (bộ thưởng 🎁 mở khi mua đủ 3 bộ cùng chủ đề).`);
       continue;
     }
     lines.push(`🔒 Khung **${styleName(id)}** mở ở **cấp ${rules.unlockLevel(id)}** (bạn đang ở cấp ${Math.max(0, Math.floor(Number(level) || 0))}).`);
@@ -224,7 +222,7 @@ function optionsFor(group, choice, level, userId, themeKey) {
     const locked = rules.isLocked(id, level, userId);
     const o = { label: `${locked ? '🔒 ' : ''}${styleName(id)}`.slice(0, 100), value: id, default: id === cur };
     if (rules.isBoosterOnly(id)) { o.description = locked ? 'Chỉ dành cho người boost server' : 'Đặc quyền Nitro Booster'; opts.push(o); continue; }
-    if (rules.isShopFrame(id)) { o.shop = true; o.locked = locked; o.description = locked ? `Chưa sở hữu — mua ở ${rules.isCdFrame(id) ? '/cuahangcongduc' : '/shopkhung'}` : 'Đã sở hữu (cửa hàng)'; opts.push(o); continue; }
+    if (rules.isShopFrame(id)) { o.shop = true; o.locked = locked; o.description = locked ? 'Chưa sở hữu — mua ở /shopkhung' : 'Đã sở hữu (cửa hàng)'; opts.push(o); continue; }
     if (rules.unlockLevel(id) > 0) o.description = locked ? `Mở khoá ở cấp ${rules.unlockLevel(id)}` : `Đã mở khoá (từ cấp ${rules.unlockLevel(id)})`;
     opts.push(o);
   }

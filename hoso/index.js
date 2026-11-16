@@ -44,7 +44,7 @@ function buildEmbed(d, displayName, user) {
         `Voice: **${formatMinutes(Number(c.voice) || 0)}**`,
       ].join(' · ')
     : 'Chưa có dữ liệu';
-  const achList = buildAchievementItems(d.level, d.manualAchievements, d.customAchievements, d.congDuc);
+  const achList = buildAchievementItems(d.level, d.manualAchievements, d.customAchievements);
   const achievementText = achList
     ? achList
         .map((a) =>
@@ -60,7 +60,6 @@ function buildEmbed(d, displayName, user) {
     { name: '⚔️ Bang Chiến (kỷ lục)', value: d.bcstat ? [...d.bcstat.items.map((i) => `${i.label}: **${i.value === '' || Number.isNaN(i.value) ? '—' : fmtVan(i.value)}**`), `Kỷ lục K/D: **${formatKd(d.bcstat.kd)}**`, `Kỷ lục H/D: **${formatHd(d.bcstat.hd)}**`, `Kỷ lục T/D: **${formatTd(d.bcstat.td)}**`].join(' · ') : 'Chưa có dữ liệu', inline: false },
     { name: '📊 Hoạt động', value: activity, inline: false }
   );
-  if (d.congDuc) e.addFields({ name: '🪷 Công Đức', value: `Cảnh Giới **${d.congDuc.realm}** · **${Number(d.congDuc.total).toLocaleString('vi-VN')}** Công Đức`, inline: false });
   if (d.quanHe) {
     const q = d.quanHe;
     const pp = (p) => `**${p.name}**${p.className ? ` · ${p.className}` : ''}`;

@@ -7,7 +7,7 @@ function getSlashCommands() {
     ['../monitoring/statusCommand', 'STATUS_SLASH_COMMANDS'],
     ['../monitoring/healthCheck', 'HEALTH_SLASH_COMMANDS'],
     ['../activityLog/logSearch', 'LOGSEARCH_SLASH_COMMANDS'],
-    ['../whoTagMe', 'WHOTAGME_SLASH_COMMANDS'], ['../character', 'CHARACTER_SLASH_COMMANDS'], ['../congDuc', 'CONG_DUC_SLASH_COMMANDS']
+    ['../whoTagMe', 'WHOTAGME_SLASH_COMMANDS'], ['../character', 'CHARACTER_SLASH_COMMANDS']
   ];
   return groups.flatMap(([modulePath, key]) => require(modulePath)[key]);
 }

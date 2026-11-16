@@ -5,7 +5,6 @@ const { LEVEL_ACHIEVEMENTS } = require('../config');
 const { ACHIEVEMENT_TIERS: TIERS } = require('../level/theme'); // 6 bậc thành tựu (tách khỏi 11 bậc khung)
 const { fmtVan } = require('./format');
 const { findAchievement } = require('./manualAchievements');
-const { computeCongDucAchievements } = require('./congDucAchievements'); // thành tựu Công Đức (hàm thuần, tách file để test không cần discord)
 
 // Số mốc -> chữ hiển thị (voice: phút -> giờ; chuỗi: ngày).
 function formatTarget(ach, n) {
@@ -48,9 +47,8 @@ const SHOW_ACHIEVEMENTS = String(process.env.HOSO_SHOW_ACHIEVEMENTS || '').trim(
 // customList = kết quả getCustomAchievements(discordId) (hoso/customAchievement.js): [{ tenThanhTuu, ghiChu, custom: true }]
 // (tối đa 1 phần tử). Chỉ 1 trong 2 loại (manual / custom) được hiện — custom ưu tiên, xem "QUY TẮC DANH HIỆU" ở dưới. Mục độc quyền: { key, label (tên gõ tự do), manual: true, custom: true, note } — luôn gộp nếu có,
 // hiện cạnh thành tựu tự chọn, nhãn "Độc quyền" (card.js tự vẽ theo cờ custom).
-function buildAchievementItems(stats, manualList, customList, congDuc) {
-  // `congDuc` (tuỳ chọn): chỉ hoso/index.js (embed) truyền vào; thẻ ảnh (card.js) không truyền nên bố cục thẻ không đổi.
-  const builtin = SHOW_ACHIEVEMENTS ? [...(stats && stats.counts ? computeAchievements(stats) || [] : []), ...computeCongDucAchievements(congDuc)] : [];
+function buildAchievementItems(stats, manualList, customList) {
+  const builtin = SHOW_ACHIEVEMENTS && stats && stats.counts ? computeAchievements(stats) || [] : [];
   const manual = (manualList || []).map((m, idx) => {
     const ach = findAchievement(m.tenThanhTuu); // dòng cũ lưu tên gốc ("Voice") vẫn ra đúng tên kiếm hiệp
     return {
@@ -74,4 +72,4 @@ function buildAchievementItems(stats, manualList, customList, congDuc) {
   return items.length ? items : null;
 }
 
-module.exports = { computeAchievements, computeCongDucAchievements, buildAchievementItems, SHOW_ACHIEVEMENTS };
+module.exports = { computeAchievements, buildAchievementItems, SHOW_ACHIEVEMENTS };

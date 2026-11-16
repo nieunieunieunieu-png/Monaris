@@ -40,7 +40,7 @@ async function connectToChannel(channel) {
     channelId: channel.id,
     guildId: channel.guild.id,
     adapterCreator: channel.guild.voiceAdapterCreator,
-    // Discord CHỈ cho bot phát soundboard (tiếng Cốc Cốc của Công Đức) khi bot KHÔNG deaf/mute/suppress -> mặc định selfDeaf=false.
+    // Discord chỉ cho bot phát soundboard khi bot KHÔNG deaf/mute/suppress -> mặc định selfDeaf=false.
     // Bot vẫn không tạo receiver/AudioPlayer nên gần như không tốn thêm RAM/CPU. Muốn quay lại selfDeaf: VOICE_HOME_SELF_DEAF=true (mất tiếng Cốc Cốc).
     selfDeaf: /^(1|true|on|yes)$/i.test(String(process.env.VOICE_HOME_SELF_DEAF || '')),
     selfMute: false,

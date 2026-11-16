@@ -11,38 +11,7 @@
 // Thêm tính năng mới: thêm 1 mục ở đây, rồi gọi require('../features').isEnabled('<id>') ở điểm vào của tính năng đó.
 
 const c = () => require('../config');
-// Nhóm Công Đức đọc thẳng module config/congDuc (đối tượng sống) để script test đổi ENV tại chỗ vẫn có hiệu lực.
-const cd = () => require('../config/congDuc');
-
 const FEATURES = [
-  // ---------------------------------------------------------------- Công Đức
-  {
-    id: 'congduc', group: 'Công Đức', name: 'Công Đức',
-    desc: 'Sảnh Công Đức: tích Công Đức khi ngồi phòng voice bot treo, thắp/đốt hương, Cảnh Giới, bảng top, cửa hàng Công Đức, tiếng Cốc Cốc, tự dọn kênh Sảnh.',
-    commands: ['/congduc', '/topcongduc', '/canhgioi', '/hosocd', '/cuahangcongduc'],
-    slash: ['congduc', 'topcongduc', 'canhgioi', 'hosocd', 'cuahangcongduc'], prefixes: ['cd:'],
-    defaultOn: () => cd().CONG_DUC_ENABLED,
-    locked: () => (cd().CONG_DUC_ENABLED ? '' : 'Đang bị tắt cứng bằng ENV CONG_DUC_ENABLED=false trên Railway.'),
-  },
-  {
-    id: 'quexam', group: 'Công Đức', name: 'Quẻ xăm hằng ngày', requires: 'congduc',
-    desc: 'Thắp hương xong tự rút 1 quẻ kèm lời sấm; quẻ tốt thưởng Công Đức và buff tạm thời.',
-    commands: [], slash: [], prefixes: [],
-    defaultOn: () => cd().CONG_DUC_QUEXAM_ENABLED,
-  },
-  {
-    id: 'hoangdao', group: 'Công Đức', name: 'Giờ Hoàng Đạo', requires: 'congduc',
-    desc: 'Mỗi ngày có 1 khung ~2 tiếng theo ngày Can Chi, nhân hệ số Công Đức (mặc định tắt).',
-    commands: [], slash: [], prefixes: [],
-    defaultOn: () => cd().CONG_DUC_HOANGDAO_ENABLED,
-  },
-  {
-    id: 'samhoi', group: 'Công Đức', name: 'Sám Hối (phạt nói tục)', requires: 'congduc',
-    desc: 'Nói tục bị trừ EXP, cộng điểm sám hối; còn sám hối thì EXP/Công Đức bị giảm; ngồi phòng thiền để giảm điểm.',
-    commands: [], slash: [], prefixes: [],
-    defaultOn: () => cd().SAM_HOI_ENABLED,
-  },
-
   // ---------------------------------------------------------------- Hồ sơ & cấp độ
   {
     id: 'hoso', group: 'Hồ sơ & Cấp độ', name: 'Hồ sơ cá nhân',
@@ -133,7 +102,7 @@ const FEATURES = [
   },
   {
     id: 'loveroom', group: 'Sự kiện & Voice', name: 'Phòng Đôi', requires: 'tempvoice',
-    desc: 'Phòng 2 người tính phí Công Đức theo phút, có bảng xếp hạng cặp (mon!topdoi).',
+    desc: 'Phòng 2 người riêng tư, có bảng xếp hạng thời gian các cặp ngồi cùng nhau (mon!topdoi).',
     commands: ['mon!topdoi'], slash: [], prefixes: [],
     defaultOn: () => c().LOVE_ROOM_ENABLED,
     locked: () => (c().LOVE_ROOM_ENABLED ? '' : 'Phòng Đôi có đồng hồ tính phí chạy từ lúc bot khởi động: cần đặt ENV LOVE_ROOM_ENABLED=true và restart bot một lần, sau đó mới bật/tắt được trên web.'),

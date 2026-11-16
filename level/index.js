@@ -53,7 +53,6 @@ const {
 const { ensureEventPointSheets } = require('../googleSheets/eventPointSheet');
 const { ensureLevelSheets, loadLevelConfig, loadMembers, applyDeltas, ensureOptionsTab, loadNoticeOptOuts, setNoticeOptOut } = require('../googleSheets/levelSheet');
 const { levelFromExp, progressInfo, setCosts, getDefaultCosts } = require('./curve');
-const expHooks = require('./expHooks');
 const { weekKey, vnParts, effectiveWeekExp } = require('./week');
 const { renderLevelCard } = require('./card');
 const { runRenderQueue } = require('../utils/renderQueue');
@@ -254,7 +253,6 @@ function awardExp(userId, key, opts = {}) {
     let gained = eligible ? (opts.exp !== undefined ? opts.exp : cfg.exp) : 0;
     // Hệ số sự kiện (VD cuối tuần x2) — thưởng chuỗi / chỉnh tay (noEvent) thì không nhân.
     if (gained > 0 && !opts.noEvent) gained = Math.round(gained * multiplierFor(key) * 100) / 100;
-    if (gained > 0) gained = expHooks.adjustGain(userId, gained); // còn điểm sám hối -> EXP nhận được giảm (samHoi/)
     const count = opts.count === undefined ? 1 : opts.count;
     const known = membersCache.get(userId);
     const name = opts.name || (known && known.name) || cachedName(userId);
@@ -285,7 +283,6 @@ function awardExp(userId, key, opts = {}) {
       if (m.level > before) onLevelUp(userId, m.level, opts.channelId || lastTextChannel.get(userId));
       if (gained > 0 && !opts.noStreak) updateStreak(userId, m, p, opts.channelId || lastTextChannel.get(userId));
     }
-    if (gained > 0) expHooks.emitGain(userId, gained, name);
     return gained;
   } catch (error) {
     console.error('[level] Lỗi awardExp:', error.message);
@@ -862,47 +859,6 @@ function adjustPointsOnly(userId, delta, name) {
   pending.set(userId, p);
 }
 
-// EXP THƯỞNG ngoài hệ thống hoạt động (dùng cho Đốt hương của congDuc/). Khác awardExp: chỉ cộng EXP TỔNG —
-// KHÔNG cộng Điểm HĐ (tránh vòng lặp điểm vô hạn), KHÔNG vào weekExp (Top tuần), KHÔNG tính chuỗi ngày, KHÔNG nhân hệ số sự kiện.
-// Lên cấp thì gọi onLevelUp như awardExp. Trả về EXP đã cộng (0 nếu Level tắt / chưa nạp xong / số không hợp lệ). Không ném lỗi.
-// opts: { name, channelId }
-function grantBonusExp(userId, exp, opts = {}) {
-  try {
-    if (!LEVEL_ENABLED || !loaded || !userId) return 0;
-    let gained = Math.round(Number(exp) * 100) / 100;
-    if (!(gained > 0)) return 0;
-    gained = expHooks.adjustGain(userId, gained); // còn điểm sám hối -> EXP thưởng giảm (samHoi/)
-    if (!(gained > 0)) return 0;
-    const known = membersCache.get(userId);
-    const before = levelFromExp(known ? known.exp : 0);
-    const m = adjustExp(userId, gained, opts.name, false);
-    if (m.level > before) onLevelUp(userId, m.level, opts.channelId || lastTextChannel.get(userId));
-    expHooks.emitGain(userId, gained, opts.name);
-    return gained;
-  } catch (error) {
-    console.error('[level] Lỗi grantBonusExp:', error.message);
-    return 0;
-  }
-}
-
-// TRỪ EXP TỔNG (phạt, dùng cho samHoi/ khi chửi tục). Chỉ đổi EXP tổng: KHÔNG đụng Điểm HĐ, EXP tuần, chuỗi ngày; KHÔNG phát expHooks (tránh sám hối tự tăng vì bị phạt).
-// Không để EXP xuống dưới 0. Có thể làm tụt cấp (m.level tính lại). Trả về EXP thực sự bị trừ (0 nếu Level tắt / chưa nạp / số không hợp lệ). Không ném lỗi.
-// opts: { name }
-function penalizeExp(userId, amount, opts = {}) {
-  try {
-    if (!LEVEL_ENABLED || !loaded || !userId) return 0;
-    const want = Math.round(Number(amount) * 100) / 100;
-    if (!(want > 0)) return 0;
-    const known = membersCache.get(userId);
-    const take = Math.round(Math.min(want, Math.max(0, known ? known.exp : 0)) * 100) / 100;
-    if (!(take > 0)) return 0;
-    adjustExp(userId, -take, opts.name, false);
-    return take;
-  } catch (error) {
-    console.error('[level] Lỗi penalizeExp:', error.message);
-    return 0;
-  }
-}
 const isLevelReady = () => Boolean(LEVEL_ENABLED && loaded);
 
 // mode: 'add' (cộng/trừ) | 'set' (đặt tổng). Trả về chuỗi kết quả để báo cho người dùng lệnh.
@@ -941,7 +897,7 @@ async function runExpAdjust({ mode, targetUser, guild, value, reason, actor, als
 
 const NUMF = (n) => Number(n).toLocaleString('vi-VN');
 
-// /addpoint (CHỈ admin): cộng/trừ Điểm HĐ (shop /profile) hoặc Công Đức (shop Công Đức), mặc định cho chính admin.
+// /addpoint (CHỈ admin): cộng/trừ Điểm Hoạt Động dùng ở /shopkhung, mặc định cho chính admin.
 client.on(Events.InteractionCreate, async (interaction) => {
   try {
     if (!interaction.isChatInputCommand() || interaction.commandName !== 'addpoint') return;
@@ -950,25 +906,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
     await interaction.deferReply({ ephemeral: true });
     const kind = interaction.options.getString('loai', true);
+    if (kind !== 'diem_hd') return void (await interaction.editReply({ content: '❌ Loại điểm không hợp lệ.' }));
     const amount = interaction.options.getInteger('so', true);
     const target = interaction.options.getUser('nguoi') || interaction.user;
     if (target.bot) return void (await interaction.editReply({ content: '❌ Không chỉnh điểm cho bot.' }));
     const member = interaction.guild ? await interaction.guild.members.fetch(target.id).catch(() => null) : null;
     const name = nameOf(member, target);
-    let text;
-    if (kind === 'diem_hd') {
-      if (!loaded) return void (await interaction.editReply({ content: NOT_LOADED_TEXT }));
-      adjustPointsOnly(target.id, amount, name);
-      await flush({ force: true }).catch(() => {});
-      text = `✅ Điểm Hoạt Động của <@${target.id}>: **${amount >= 0 ? '+' : ''}${NUMF(amount)}** (EXP/cấp không đổi). Mở \`/shopkhung\` để xem. Nếu tab "Điểm Hoạt Động" chưa hiện số thì đợi vài giây cho Sheet tính lại công thức.`;
-    } else {
-      const cd = require('../congDuc/core');
-      if (!cd.isLoaded()) return void (await interaction.editReply({ content: '⏳ Công Đức chưa nạp xong, thử lại sau ít phút.' }));
-      const rec = cd.getRecord(target.id, name);
-      const before = rec.total || 0;
-      const done = cd.adjustMeritRaw(rec, amount);
-      text = `✅ Công Đức của <@${target.id}>: **${NUMF(before)} → ${NUMF(rec.total)}** (${done >= 0 ? '+' : ''}${NUMF(done)}), cảnh giới **${rec.realm}**. Điểm Lòng Thành còn lại: **${NUMF(cd.sincerityOf(rec))}**.`;
-    }
+    if (!loaded) return void (await interaction.editReply({ content: NOT_LOADED_TEXT }));
+    adjustPointsOnly(target.id, amount, name);
+    await flush({ force: true }).catch(() => {});
+    const text = `✅ Điểm Hoạt Động của <@${target.id}>: **${amount >= 0 ? '+' : ''}${NUMF(amount)}** (EXP/cấp không đổi). Mở \`/shopkhung\` để xem. Nếu tab "Điểm Hoạt Động" chưa hiện số thì đợi vài giây cho Sheet tính lại công thức.`;
     try { require('../activityLog').logActivity(`🛠️ /addpoint ${kind}: ${interaction.user.username} (${interaction.user.id}) → ${name} (${target.id}) ${amount >= 0 ? '+' : ''}${amount}`); } catch { /* bỏ qua */ }
     await interaction.editReply({ content: text, allowedMentions: { parse: [] } });
   } catch (error) {
@@ -1241,4 +1188,4 @@ function getLevelStatus() {
   return { loaded, members: membersCache.size, pending: pending.size, lastFlushAt: levelFlushAt };
 }
 
-module.exports = { awardScrimFullWeek, awardExp, grantBonusExp, penalizeExp, isLevelReady, onScrimVote, startLevel, getLevelSnapshot, getLevelStatus, LEVEL_SLASH_COMMANDS };
+module.exports = { awardScrimFullWeek, awardExp, isLevelReady, onScrimVote, startLevel, getLevelSnapshot, getLevelStatus, LEVEL_SLASH_COMMANDS };

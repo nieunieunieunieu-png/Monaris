@@ -66,8 +66,8 @@ const LEVEL_SLASH_COMMANDS = [
     .addBooleanOption((opt) => opt.setName('doi_diem_hd').setDescription('Đổi luôn Điểm HĐ (điểm mua shop)? Bỏ trống = KHÔNG đổi')),
   new SlashCommandBuilder()
     .setName('addpoint')
-    .setDescription('(Chỉ admin) Cộng/trừ Điểm Hoạt Động hoặc Công Đức (mặc định cho chính bạn)')
-    .addStringOption((opt) => opt.setName('loai').setDescription('Loại điểm').setRequired(true).addChoices({ name: 'Điểm Hoạt Động (shop khung /profile)', value: 'diem_hd' }, { name: 'Công Đức (Lòng Thành, shop Công Đức)', value: 'cong_duc' }))
+    .setDescription('(Chỉ admin) Cộng/trừ Điểm Hoạt Động (mặc định cho chính bạn)')
+    .addStringOption((opt) => opt.setName('loai').setDescription('Loại điểm').setRequired(true).addChoices({ name: 'Điểm Hoạt Động (shop khung /profile)', value: 'diem_hd' }))
     .addIntegerOption((opt) => opt.setName('so').setDescription('Số điểm cộng thêm (số âm = trừ)').setRequired(true).setMinValue(-100000000).setMaxValue(100000000))
     .addUserOption((opt) => opt.setName('nguoi').setDescription('Thành viên (bỏ trống = chính bạn)')),
   new SlashCommandBuilder()
