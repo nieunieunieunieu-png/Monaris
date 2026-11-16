@@ -19,8 +19,6 @@
 //   - config/checkGear.js        : Check Gear — kênh, lớp, giới hạn ảnh, Google Sheet riêng + tab theo phiên bản
 //   - config/highlight.js        : "Highlight Nghịch Thuỷ Hàn" — kênh quét link Youtube + tên tab Google Sheet
 //   - config/nmImage.js          : Lưu/gửi lại ảnh theo tên — folder Drive + sheet "Cây Thư Mục"
-//   - config/level.js            : Hệ thống Level/EXP — sheet, danh sách hoạt động + EXP, kênh thảo luận, cooldown
-//   - config/profile.js          : Hồ Sơ Cá Nhân — ảnh bìa/avatar/biệt danh trên thẻ /level (cấp tối thiểu, cooldown đổi ảnh)
 //   - config/keywordFilter.js    : Bộ lọc từ khoá nhạy cảm — tab sheet, kênh log, danh sách miễn lọc
 //   - config/antiSpam.js         : Chống spam tin giống nhau — cảnh báo, cấm chat (timeout), tab sheet "Spam Chat"
 //   - config/activityLog.js      : Nhật ký hoạt động của bot — kênh log, bật/tắt, chu kỳ gửi gom lô
@@ -52,8 +50,6 @@ module.exports = {
   ...require('./config/checkGear'),
   ...require('./config/highlight'),
   ...require('./config/nmImage'),
-  ...require('./config/level'),
-  ...require('./config/profile'),
   ...require('./config/keywordFilter'),
   ...require('./config/antiSpam'),
   ...require('./config/activityLog'),
@@ -67,6 +63,5 @@ module.exports = {
   ...require('./config/pickRole'),
   ...require('./config/loveRoom'),
   ...require('./config/featureFlags'),
-  ...require('./config/shop'),
   ...require('./config/teamRole'),
 };

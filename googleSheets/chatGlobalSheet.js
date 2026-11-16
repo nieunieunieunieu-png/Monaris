@@ -8,7 +8,7 @@
 // CHAT_GLOBAL_SHEET_COLUMNS): A = Discord ID, B = Ingame, C = Class,
 // D = Biệt Danh (dòng 1 là header, dòng 2 trở đi là data).
 //
-// Dùng cho lệnh /setprofile (commands/slashCommands.js): AI CHO PHÉP người
+// Dùng cho lệnh /setpf (commands/slashCommands.js): AI CHO PHÉP người
 // dùng từ BẤT KỲ server nào bot có mặt tự set — hoặc set THAY người khác
 // qua mention — Ingame/Class/Biệt Danh của họ, không giới hạn quyền theo
 // yêu cầu ban đầu. Danh sách đọc ra từ đây cũng được gộp vào
@@ -35,7 +35,7 @@ const SHEET_RANGE_ALL = `'${CHAT_GLOBAL_SHEET_NAME}'!A1:G10000`;
 // Cache trong bộ nhớ (giống memberSheet.js) — tránh gọi Sheets API mỗi lần
 // AI auto-chat trigger (có thể rất thường xuyên). Bị xoá ngay (không đợi
 // hết hạn) mỗi khi có ghi mới qua upsertChatGlobalMember(), để người vừa
-// /setprofile xong hỏi lại ngay lập tức vẫn thấy đúng dữ liệu mới nhất.
+// /setpf xong hỏi lại ngay lập tức vẫn thấy đúng dữ liệu mới nhất.
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút
 let cachedRows = null;
 let cachedAt = 0;
@@ -134,7 +134,7 @@ function readCell(row, columnLetter) {
 
 // discordId -> { ingame, className, nickname } | null. Dùng cho AI auto-chat
 // khi cần xưng hô đúng với CHÍNH người đang chat (nếu họ không có trong tab
-// "Bang" của server chính nhưng đã tự /setprofile ở đâu đó).
+// "Bang" của server chính nhưng đã tự /setpf ở đâu đó).
 async function getChatGlobalMemberByDiscordId(discordId) {
   try {
     const rows = await getChatGlobalRows();
@@ -194,31 +194,10 @@ async function getAllChatGlobalMembers() {
   }
 }
 
-// Trả về MỌI hàng có Discord ID kèm 3 cột quan hệ — KHÔNG lọc theo Ingame/Biệt Danh như getAllChatGlobalMembers().
-// Lý do: setSuPhu/setTriKy/setKimLan tự tạo hàng chỉ có cột A (ensureMemberRow) cho người chưa từng /setprofile
-// (tên ingame của họ nằm ở tab "Bang"); nếu lọc thì hàng đó biến mất và thẻ /hoso không thấy Tri Kỷ / Sư Đồ.
-// [{ discordId, suPhuId, triKyId, kimLan }]
-async function getAllChatGlobalRelations() {
-  try {
-    const rows = await getChatGlobalRows();
-    return rows
-      .map((row) => ({
-        discordId: readCell(row, CHAT_GLOBAL_SHEET_COLUMNS.discordId),
-        suPhuId: readCell(row, CHAT_GLOBAL_RELATIONSHIP_COLUMNS.suPhu),
-        triKyId: readCell(row, CHAT_GLOBAL_RELATIONSHIP_COLUMNS.triKy),
-        kimLan: readCell(row, CHAT_GLOBAL_RELATIONSHIP_COLUMNS.kimLan),
-      }))
-      .filter((r) => r.discordId);
-  } catch (error) {
-    console.error('Không thể lấy quan hệ từ tab "ChatGlobal":', error.message);
-    return [];
-  }
-}
-
 // Set (hoặc set THAY người khác) Ingame/Class/Biệt Danh của 1 discordId.
 // Mỗi field là TÙY CHỌN riêng — field nào KHÔNG truyền vào (undefined) thì
 // GIỮ NGUYÊN giá trị cũ đang có trên sheet (không bị xoá mất), chỉ field
-// nào có truyền giá trị mới mới bị ghi đè — để lệnh /setprofile có thể vừa
+// nào có truyền giá trị mới mới bị ghi đè — để lệnh /setpf có thể vừa
 // dùng để tạo mới vừa dùng để sửa 1 phần mà không sợ mất dữ liệu 2 field
 // còn lại. Nếu discordId chưa từng có dòng nào -> thêm dòng mới ở cuối
 // sheet; nếu đã có -> cập nhật đúng dòng đó.
@@ -479,7 +458,6 @@ async function setKimLan(discordId, tenKimLan) {
 module.exports = {
   getChatGlobalMemberByDiscordId,
   getAllChatGlobalMembers,
-  getAllChatGlobalRelations,
   upsertChatGlobalMember,
   setSuPhu,
   setTriKy,

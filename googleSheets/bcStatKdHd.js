@@ -1,6 +1,6 @@
 // ===== BcStat: KD / HD + quy tắc "kỷ lục" dùng chung =====
 // File util thuần (không gọi Google Sheets) — mọi nơi tính/hiển thị kỷ lục đều dùng chung ở đây
-// (bcStatRecords.js, bcStatSummary.js, hoso/card.js, hoso/index.js).
+// (bcStatRecords.js, bcStatSummary.js).
 //
 // 1) Hướng kỷ lục: hạng mục "trongThuong" (Trọng thương) CÀNG NHỎ CÀNG TỐT -> kỷ lục = giá trị NHỎ NHẤT;
 //    8 hạng mục còn lại kỷ lục = giá trị LỚN NHẤT.

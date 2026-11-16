@@ -1,5 +1,0 @@
-// ===== hoso/frame/shop_cl_baha/avatar.js — KHUNG AVATAR (tự dựng trong motif.js: vành ngọc lục bảo + rùa-rồng cuộn vác bia) =====
-const { helpers } = require('../../bonusKit');
-const { TIERS } = require('./colors');
-const { avatarFrame } = require('./motif');
-module.exports = { avatarFrame: (_tier, R = 70) => avatarFrame(TIERS[0], R, helpers) };

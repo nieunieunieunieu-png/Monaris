@@ -1,6 +1,6 @@
-// ===== Hàng chờ vẽ thẻ ảnh (/level, /hoso, ...) =====
-// Vẽ thẻ = sharp + librsvg + font CJK 19 MB, mỗi lần tốn nhiều RAM. Nếu nhiều người gõ lệnh cùng lúc thì các lần vẽ
-// chạy song song và RAM vọt lên. Dùng chung 1 hàng chờ: người đến sau chờ người trước vẽ xong rồi mới tới lượt.
+// ===== Hàng chờ xử lý ảnh =====
+// Xử lý ảnh = sharp + librsvg + font CJK 19 MB, mỗi lần tốn nhiều RAM. Nếu nhiều ảnh xử lý cùng lúc thì RAM vọt lên.
+// Dùng chung 1 hàng chờ: tác vụ đến sau chờ tác vụ trước xong rồi mới tới lượt.
 //
 // Dùng:  const png = await runRenderQueue(() => renderXxxCard(...), (ahead) => báoNgườiDùng(ahead));
 //   - onWait(ahead): gọi ĐÚNG 1 lần nếu phải chờ; ahead = số người đang vẽ/đang chờ phía trước. Lỗi trong onWait bị bỏ qua.

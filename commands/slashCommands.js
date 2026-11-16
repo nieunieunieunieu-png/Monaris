@@ -24,8 +24,8 @@ const { handleTranslateSlashCommands } = require('./slashTranslate');
 // Tên các slash command KHÔNG do file này xử lý (thuộc thiKiem/index.js) —
 // dùng để loại trừ khi kiểm tra "interaction này có phải do file này xử lý
 // không" cho phần gate "chưa sẵn sàng" bên dưới, tránh trả lời trùng với
-// listener InteractionCreate riêng của thiKiem/index.js (và level/index.js: /level /toplevel /expinfo /levelsync /expadd /expset).
-const NON_LOCAL_COMMAND_NAMES = new Set(['set-mua-giai', 'xoa-diem-thi-kiem', 'xem-bang-xep-hang-thi-kiem', 'level', 'toplevel', 'topstreak', 'nhacstreak', 'expinfo', 'levelsync', 'levelnotify', 'profile', 'profilexoa', 'shopkhung', 'shopcap', 'expadd', 'expset', 'addpoint', 'logtim', 'baocaothang', 'toprole', 'themthanhtuu', 'suathanhtuu', 'xoathanhtuu', 'dsthanhtuu', 'whotagme', 'bang-nhanvat', 'nhanvat', 'xoa-nhanvat']);
+// listener InteractionCreate riêng của thiKiem/index.js.
+const NON_LOCAL_COMMAND_NAMES = new Set(['set-mua-giai', 'xoa-diem-thi-kiem', 'xem-bang-xep-hang-thi-kiem', 'logtim', 'whotagme', 'bang-nhanvat', 'nhanvat', 'xoa-nhanvat']);
 
 client.on(Events.InteractionCreate, async (interaction) => {
   // Bot chưa nạp xong dữ liệu khởi động (xem utils/readyGate.js) — CHỈ chặn

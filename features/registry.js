@@ -12,31 +12,6 @@
 
 const c = () => require('../config');
 const FEATURES = [
-  // ---------------------------------------------------------------- Hồ sơ & cấp độ
-  {
-    id: 'hoso', group: 'Hồ sơ & Cấp độ', name: 'Hồ sơ cá nhân',
-    desc: 'Thẻ hồ sơ /hoso, thành tựu kiếm hiệp tự chọn, tuỳ biến /profile (biệt danh, ảnh bìa, khung thẻ, Tri Kỷ), kể cả trang hồ sơ trên web.',
-    commands: ['/hoso', '/profile', '/profilexoa', 'mon!hoso', 'mon!profile'],
-    slash: ['hoso', 'profile', 'profilexoa'], prefixes: ['profile:'],
-    defaultOn: () => c().PROFILE_ENABLED && c().LEVEL_ENABLED,
-    locked: () => (c().PROFILE_ENABLED && c().LEVEL_ENABLED ? '' : 'Đang bị tắt cứng bằng ENV PROFILE_ENABLED/LEVEL_ENABLED=false trên Railway.'),
-  },
-  {
-    id: 'shopkhung', group: 'Hồ sơ & Cấp độ', name: 'Cửa hàng khung',
-    desc: 'Mua khung thẻ/avatar bằng điểm hoạt động. Tắt chỉ ẩn cửa hàng, khung đã mua vẫn dùng được.',
-    commands: ['/shopkhung'], slash: ['shopkhung'], prefixes: ['shop:'],
-    defaultOn: () => c().SHOP_ENABLED,
-    locked: () => (c().SHOP_ENABLED ? '' : 'Đang bị tắt cứng bằng ENV SHOP_ENABLED=false trên Railway.'),
-  },
-  {
-    id: 'level', group: 'Hồ sơ & Cấp độ', name: 'Xem Level / Top / Streak',
-    desc: 'Thẻ /level, bảng /toplevel, /topstreak và nhắc streak qua DM. Tắt chỉ ẩn phần xem và ngừng nhắc; bot VẪN ghi EXP ngầm nên không mất dữ liệu.',
-    commands: ['/level', '/toplevel', '/topstreak', '/nhacstreak', 'mon!level', 'mon!toplevel', 'mon!topstreak', 'mon!nhacstreak'],
-    slash: ['level', 'toplevel', 'topstreak', 'nhacstreak'], prefixes: [],
-    defaultOn: () => c().LEVEL_ENABLED,
-    locked: () => (c().LEVEL_ENABLED ? '' : 'Đang bị tắt cứng bằng ENV LEVEL_ENABLED=false trên Railway.'),
-  },
-
   // ---------------------------------------------------------------- Bot trò chuyện
   {
     id: 'aichat', group: 'Bot trò chuyện', name: 'Bot trò chuyện (AI)',

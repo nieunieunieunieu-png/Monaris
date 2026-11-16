@@ -22,7 +22,6 @@ process.env.FONTCONFIG_PATH = require('path').join(__dirname, 'assets', 'fonts')
 }
 const { Events } = require('discord.js');
 const http = require('http');
-const { ENABLED } = require('./config/lite');
 
 const client = require('./client');
 // Các module của Monaris
@@ -32,8 +31,6 @@ require('./character');
 require('./mechBoss');
 require('./bantime'); // Ban tam thoi va tu dong go ban
 
-// Đăng nhập Discord
-client.login(process.env.DISCORD_TOKEN);
 const channelKnowledge = require('./services/channelKnowledge');
 channelKnowledge.loadKnowledge();
 
@@ -77,10 +74,6 @@ const { ensureKnowledgeImageSheetExists } = require('./googleSheets/knowledgeIma
 const { startDailyBackup } = require('./backup');
 const { startKeywordFilter } = require('./keywordFilter');
 const { startAntiSpam } = require('./antiSpam');
-const { startLevel, LEVEL_SLASH_COMMANDS } = require('./level');
-const { HOSO_SLASH_COMMANDS, startManualAchievements } = require('./hoso');
-const { SHOP_SLASH_COMMANDS, startShop } = require('./shop'); // cửa hàng khung hồ sơ (/shopkhung, /shopcap)
-const { CUSTOM_ACHIEVEMENT_SLASH_COMMANDS, startCustomAchievements } = require('./hoso/customAchievement');
 const { STATUS_SLASH_COMMANDS } = require('./monitoring/statusCommand');
 const { logActivity } = require('./activityLog');
 const { startMemberLog } = require('./activityLog/memberLog');
@@ -105,7 +98,6 @@ require('./tempVoice'); // phòng voice tạm: vào kênh cổng -> bot tạo ph
 require('./events/voiceFollow');
 require('./welcome'); // người MỚI vào server: tự gán role + gửi ảnh chào
 const { initNoticeBoardState, checkNoticeBoard, checkScheduledAutoChat } = require('./AutoReply');
-require('./level'); // hệ thống Level/EXP: đếm hoạt động, cộng EXP, ghi Google Sheet + /level /toplevel /expinfo
 
 // Bắt lỗi 'error' trên client — nếu không có handler này, khi 1 Promise
 // bị reject bên trong 1 listener (vd messageCreate) mà không có try/catch,
@@ -189,7 +181,7 @@ client.once(Events.ClientReady, async (readyClient) => {
   // lưu từ lần chạy trước — CẦN NGAY vì web (Monaris Admin) có thể gọi admin API
   // đọc 2 dữ liệu này bất cứ lúc nào sau khi bot vừa deploy lại.
   if (BANG_INTEGRATION_ENABLED) await safeStep('loadState', () => loadState());
-  // scrimData/bcData do bot BANG ghi (BotState) — bot gốc chỉ ĐỌC lại định kỳ (AI chat biết lịch scrim, Level thưởng voice đúng giờ scrim, nhật ký). KHÔNG gọi saveState ở bot này.
+  // scrimData/bcData do bot BANG ghi (BotState) — bot gốc chỉ ĐỌC lại định kỳ (AI chat biết lịch scrim, nhật ký). KHÔNG gọi saveState ở bot này.
   if (BANG_INTEGRATION_ENABLED) setInterval(() => { loadState().catch((e) => console.error('[state] Làm mới BotState lỗi:', e.message)); }, 5 * 60 * 1000);
 
   // Khôi phục danh sách kênh chat được phép/server (chatChannels) — cần
@@ -352,20 +344,8 @@ for (const command of PHOBAN12_SLASH_COMMANDS) {
       await deferredStep('startKeywordFilter', () => startKeywordFilter(authClient));
       await deferredStep('startAntiSpam', () => startAntiSpam(authClient));
       await deferredStep('startTempVoice', () => startTempVoice());
-      // Level/EXP: tạo tab Level + Cấu Hình EXP + Bảng Cấp Độ, nạp dữ liệu rồi bật vòng ghi Sheet theo lô.
-      if (ENABLED.LEVEL) {
-  await deferredStep('startLevel', () => startLevel());
-}
       // Pick Role bằng react (hệ phái + hoạt động): nạp tab "Pick Role", đăng/đồng bộ 2 tin trong PICK_ROLE_CHANNEL_ID.
       // Role team (xếp đội hình): tạo tab "Team Role" + kiểm tra 5 role (tên/quyền) và chỉ log cảnh báo, không tự sửa.
-      // Cửa hàng khung hồ sơ: tạo tab "Shop Khung" + nạp khung đã sở hữu (khung shop_* chỉ chọn được khi đã mua, xem hoso/frame/levelRules.js).
-      if (ENABLED.SHOP) {
-        await deferredStep('startShop', () => startShop());
-      }
-      // Thành Tựu Đặt Tay (chọn từ danh sách có sẵn qua /profile): tạo tab "Thành Tựu Đặt Tay" + nạp cache RAM.
-      await deferredStep('startManualAchievements', () => startManualAchievements());
-      // Thành Tựu Riêng (/themthanhtuu, /suathanhtuu, /xoathanhtuu, /dsthanhtuu): gõ tự do, chỉ 1 người được dùng lệnh.
-      await deferredStep('startCustomAchievements', () => startCustomAchievements());
       // Nhật ký thành viên: tạo tab "Nhật Ký Tin Nhắn", nạp lại bản chụp tin sau restart, bật ghi Sheet theo lô.
       await deferredStep('startMemberLog', () => startMemberLog());
 

@@ -1,7 +1,7 @@
 {
   "name": "monaris-bot",
   "version": "1.0.0",
-  "description": "Monaris — Discord community bot with AI, profiles, levels and temporary voice rooms",
+  "description": "Monaris — Discord community bot with AI, basic profiles and temporary voice rooms",
   "main": "index.js",
   "engines": {
     "node": ">=24 <25"

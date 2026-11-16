@@ -34,14 +34,12 @@ function withTimeout(promise, ms, label) {
 function buildSheetTargets() {
   const t = [
     { label: 'Sheet chính (vote/state)', id: cfg.SPREADSHEET_ID, tabs: [cfg.SHEET_NAME, cfg.RESULT_SHEET_NAME, cfg.BC_SHEET_NAME, cfg.STATE_SHEET_NAME] },
-    // Tab "Hồ Sơ Cá Nhân" nằm trong spreadsheet Kho ảnh (googleSheets/profileSheet.js), không phải sheet chính.
     { label: 'Sheet nguồn (Bang)', id: cfg.SRC_IMAGE_SPREADSHEET_ID, tabs: [cfg.BANG_SHEET_NAME, cfg.UPDATE_PROFILE_SHEET_NAME] },
     { label: 'Sheet chat/ChatGlobal', id: cfg.BOT_CHAT_HISTORY_SPREADSHEET_ID, tabs: [cfg.CHAT_GLOBAL_SHEET_NAME, cfg.ACCESS_ID_SHEET_NAME, cfg.KNOWLEDGE_SHEET_NAME] },
-    { label: 'Sheet Level', id: cfg.LEVEL_SPREADSHEET_ID, tabs: [cfg.LEVEL_SHEET_NAME, cfg.LEVEL_CONFIG_SHEET_NAME, cfg.LEVEL_TABLE_SHEET_NAME] },
     { label: 'Sheet Thí Kiếm', id: cfg.THIKIEM_SPREADSHEET_ID, tabs: [cfg.THIKIEM_RANK_SHEET_NAME, cfg.THIKIEM_CONFIG_SHEET_NAME] },
     { label: 'Sheet Check Gear', id: cfg.CHECK_GEAR_SPREADSHEET_ID, tabs: [] }, // tab cũ "NTH _ Check Gear" đã được đổi tên "(cũ - đã chuyển)"; tab theo phiên bản tạo động -> chỉ kiểm tra mở được file
     { label: 'Sheet Bang Chiến Stat', id: cfg.BCSTAT_SPREADSHEET_ID, tabs: [cfg.BCSTAT_SUMMARY_SHEET_NAME] },
-    { label: 'Sheet Kho ảnh', id: cfg.NM_IMAGE_SPREADSHEET_ID, tabs: [cfg.NM_IMAGE_SHEET_NAME, cfg.PROFILE_SHEET_NAME] },
+    { label: 'Sheet Kho ảnh', id: cfg.NM_IMAGE_SPREADSHEET_ID, tabs: [cfg.NM_IMAGE_SHEET_NAME] },
   ];
   // Gộp các mục trùng spreadsheet ID (nhiều cấu hình trỏ cùng 1 file) để chỉ gọi API 1 lần.
   const merged = new Map();

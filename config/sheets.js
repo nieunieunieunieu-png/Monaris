@@ -108,7 +108,7 @@ const AUTO_DM_SCHEDULE_SHEET_NAME = 'Auto DM Schedule';
 // đọc/ghi từ tab "ChatGlobal", nằm CÙNG spreadsheet với BotChatHistory ở
 // trên (BOT_CHAT_HISTORY_SPREADSHEET_ID) — khác với tab "Bang" (chỉ dành
 // cho thành viên server chính, đọc từ SRC_IMAGE_SPREADSHEET_ID). Dùng cho
-// lệnh /setprofile (googleSheets/chatGlobalSheet.js): CHO PHÉP người dùng
+// lệnh /setpf (googleSheets/chatGlobalSheet.js): CHO PHÉP người dùng
 // từ BẤT KỲ server nào bot có mặt tự set (hoặc set THAY người khác qua
 // mention) Ingame/Class/Biệt Danh của họ — không giới hạn quyền. Danh sách
 // này cũng được gộp vào memberDirectory cho AI auto-chat (AutoReply/index.js)

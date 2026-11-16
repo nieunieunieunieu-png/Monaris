@@ -290,12 +290,7 @@ async function getBangIdSet() {
   return ids.size ? ids : null;
 }
 
-// Danh sách điểm của những người CÓ trong tab "Bang" (dùng để tính hạng hệ phái ở rank card, /hoso).
-async function getBangRankEntries() {
-  const [entries, bangIds] = await Promise.all([getAllRankEntries(), getBangIdSet()]);
-  return bangIds ? entries.filter((e) => bangIds.has(e.discordId)) : entries;
-}
-
+// Danh sách điểm của những người CÓ trong tab "Bang" (dùng để tính hạng hệ phái ở bảng xếp hạng).
 async function getAllRankEntries() {
   const sheets = await getSheetsClient();
   const rows = await getAllRankRowsRaw(sheets);
@@ -504,7 +499,6 @@ module.exports = {
   getSeasonConfig,
   setSeasonConfigValues,
   getAllRankEntries,
-  getBangRankEntries,
   getRankEntryByDiscordId,
   upsertRankScore,
   recomputeRanksAndGetLeaderboard,
