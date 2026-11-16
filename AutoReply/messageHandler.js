@@ -67,6 +67,8 @@ const DAY_VOTE_SUMMARY_FIELD = { 'Thứ 4': 'totalThu4', 'Thứ 5': 'totalThu5',
 
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
+  // VideoMotion handles owner video links/attachments separately; do not also chat-reply.
+  if (require('../videoMotion').shouldHandle(message)) return;
   // MONARIS_MECH_BOSS_GUARD
   if (require('../mechBoss').isMechRequest(message)) return;
   // MONARIS_OWNER_STYLE_V1
