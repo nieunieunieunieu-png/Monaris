@@ -1,0 +1,37 @@
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*credentials*.json
+*service-account*.json
+*service_account*.json
+MonarisKeys/
+keys/
+secrets/
+
+# Installed dependencies
+node_modules/
+**/node_modules/
+
+# Personal data and local state
+data/
+logs/
+*.log
+
+# Backups and archives
+backups/
+backup/
+backup_*/
+*.bak
+*.zip
+*.7z
+*.rar
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
