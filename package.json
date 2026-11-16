@@ -14,12 +14,12 @@
     "test:load": "node scripts/smokeLoad.js"
   },
   "dependencies": {
+    "@discordjs/voice": "0.19.2",
     "@googleapis/drive": "27.0.0",
     "@googleapis/sheets": "18.1.2",
-    "@discordjs/voice": "0.19.2",
     "discord.js": "14.27.0",
     "libsodium-wrappers": "0.8.4",
     "opusscript": "0.1.1",
-    "sharp": "0.33.5"
+    "sharp": "0.35.5"
   }
 }
