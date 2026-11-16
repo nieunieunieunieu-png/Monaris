@@ -29,6 +29,7 @@ require('./welcome');
 require('./autoRole');
 require('./character');
 require('./mechBoss');
+require('./videoMotion'); // Anh chup va ghi chu dong tac video (owner-only)
 require('./bantime'); // Ban tam thoi va tu dong go ban
 
 const channelKnowledge = require('./services/channelKnowledge');
