@@ -1,0 +1,25 @@
+{
+  "name": "monaris-bot",
+  "version": "1.0.0",
+  "description": "Monaris — Discord community bot with AI, profiles, levels and temporary voice rooms",
+  "main": "index.js",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "start": "node start.js",
+    "doctor": "node scripts/doctor.js",
+    "check": "node scripts/check.js",
+    "test": "node --test tests/*.test.js",
+    "test:load": "node scripts/smokeLoad.js"
+  },
+  "dependencies": {
+    "@googleapis/drive": "27.0.0",
+    "@googleapis/sheets": "18.1.2",
+    "@discordjs/voice": "0.19.2",
+    "discord.js": "14.27.0",
+    "libsodium-wrappers": "0.8.4",
+    "opusscript": "0.1.1",
+    "sharp": "0.33.5"
+  }
+}
