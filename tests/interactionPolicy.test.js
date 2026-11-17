@@ -21,6 +21,7 @@ test('ignore commands, links, secrets and sensitive content', () => {
     'mon!help', '/help', '!ping',
     'xem https://example.com nhé', 'discord.gg/example',
     'password: secret123', 'GEMINI_API_KEY=secret123',
+    'DISCORD_TOKEN=secret123', 'GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=secret123',
     'nội dung khiêu dâm',
   ]) {
     assert.equal(policy.isIgnoredAutoMessage(message(content)), true, content);

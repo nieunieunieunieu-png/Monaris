@@ -3,7 +3,7 @@
 // Chỉ áp dụng cho phản hồi / reaction tự động, không chặn listener lệnh khác.
 const { isBlockedContentQuery } = require('./contentFilter');
 const URL = /(?:https?:\/\/|www\.|discord\.gg\/|discord\.com\/invite\/|\b[a-z0-9-]+\.(?:com|net|org|vn|io|gg|app|dev|me|co)(?:\/|\b))/i;
-const SECRET = /(?:\b(?:password|passwd|mat\s*khau|mật\s*khẩu|api[_ -]?key|private[_ -]?key|secret|token|otp|ma\s*otp|mã\s*otp)\s*[:=]\s*\S+|\b(?:sk-[\w-]{20,}|AIza[\w-]{20,})\b)/i;
+const SECRET = /(?:\b(?:password|passwd|mat\s*khau|mật\s*khẩu|(?:[a-z][a-z0-9]*_)*(?:api[_ -]?key|private[_ -]?key|secret|token)|otp|ma\s*otp|mã\s*otp)\s*[:=]\s*\S+|\b(?:sk-[\w-]{20,}|AIza[\w-]{20,})\b)/i;
 const COMMAND = /^\s*(?:\/|!|\.|mon!|<\/@)/i;
 
 function isIgnoredAutoMessage(message) {
