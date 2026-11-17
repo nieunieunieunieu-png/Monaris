@@ -14,9 +14,51 @@ function clean(s) {
     .replace(/AIza[\w-]+|[\w-]{24,}\.[\w-]{6,}\.[\w-]{20,}/g, '[đã ẩn khóa]')
     .slice(0, 700);
 }
-function makeService({ read, write, generate, forbidden = () => false, ready = () => true }) {
+// Resolve live Discord mentions before passing the current message to Gemini.
+function resolveLiveMentions(text, message) {
+  return String(text || '').replace(/<@!?(\d+)>/g, (raw, id) => {
+    if (id === OWNER) return '@Bông';
+    const member = message.mentions?.members?.get(id);
+    const user = message.mentions?.users?.get(id);
+    const label = member?.displayName || user?.globalName || user?.username;
+    return label ? '@' + clean(label).replace(/[\r\n]/g, ' ') : '@một thành viên';
+  });
+}
+// Archived style samples are anonymized, but live replies should never
+// print their anonymous placeholders verbatim.
+function cleanGeneratedReply(text) {
+  return String(text || '')
+    .replace(/\[(?:người được nhắc|mention)\]/gi, 'Bông')
+    .replace(/<@!?\d+>/g, 'Bông');
+}
+// In this channel Monaris occasionally joins a conversation, never speaks as Bông.
+const TAG_REPLY_CHANCE = 0.30;
+const SPONTANEOUS_REPLY_CHANCE = 0.03;
+const REPLY_GAP_MS = 45 * 60 * 1000;
+const OWNER_ACTIVE_GAP_MS = 10 * 60 * 1000;
+
+function isCasualMessage(m) {
+  const content = String(m?.content || '').trim();
+  return content.length >= 12 && content.length <= 450 &&
+    !/^(?:mon!|[!/])/i.test(content) &&
+    !/(?:https?:\/\/|discord\.gg\/|<@|<#|@everyone|@here)/i.test(content) &&
+    !/\b(?:password|otp|secret|token|private[_ -]?key|api[_ -]?key)\b/i.test(content) &&
+    !(m.attachments?.size > 0);
+}
+
+function makeService({
+  read, write, generate, forbidden = () => false, ready = () => true,
+  random = Math.random, now = Date.now,
+  tagReplyChance = TAG_REPLY_CHANCE,
+  spontaneousReplyChance = SPONTANEOUS_REPLY_CHANCE,
+  replyGapMs = REPLY_GAP_MS,
+  ownerActiveGapMs = OWNER_ACTIVE_GAP_MS
+}) {
   let state = read() || { enabled: true, samples: [] };
   state.samples = Array.isArray(state.samples) ? state.samples : [];
+  if (typeof state.autoReplyEnabled !== 'boolean') state.autoReplyEnabled = true;
+  let lastAutoReplyAt = Number(state.lastAutoReplyAt) || 0;
+  let lastOwnerMessageAt = 0;
   let learning = false;
   let epoch = 0;
   let busy = false;
@@ -64,9 +106,19 @@ function makeService({ read, write, generate, forbidden = () => false, ready = (
     const cmd = m.content.trim().toLowerCase();
     if (m.author.id === OWNER) {
       if (cmd.startsWith('mon!style')) {
-        if (cmd === 'mon!style off') { state.enabled = false; persist(); await reply(m, 'Đã tắt trả lời thay và học tin nhắn mới.'); }
+        if (cmd === 'mon!style auto off') {
+          state.autoReplyEnabled = false;
+          persist();
+          await reply(m, 'Monaris đã tắt chế độ thỉnh thoảng tự trả lời trong kênh này.');
+        }
+        else if (cmd === 'mon!style auto on') {
+          state.autoReplyEnabled = true;
+          persist();
+          await reply(m, 'Đã bật chế độ trả lời ngẫu nhiên của Monaris trong kênh này.');
+        }
+        else if (cmd === 'mon!style off') { state.enabled = false; persist(); await reply(m, 'Đã tắt trả lời thay và học tin nhắn mới.'); }
         else if (cmd === 'mon!style on') { state.enabled = true; persist(); await reply(m, 'Đã bật trả lời thay trong kênh này.'); }
-        else if (cmd === 'mon!style clear') { epoch++; state = { enabled: false, samples: [] }; persist(); await reply(m, 'Đã xóa mẫu phong cách và tắt học/trả lời thay.'); }
+        else if (cmd === 'mon!style clear') { epoch++; state = { enabled: false, autoReplyEnabled: false, samples: [] }; persist(); await reply(m, 'Đã xóa mẫu phong cách và tắt học/trả lời thay.'); }
         else if (cmd === 'mon!style learn') {
           if (learning) { await reply(m, 'Đang học, bạn đợi một chút nhé.'); return true; }
           await reply(m, 'Đang đọc tối đa 500 tin gần nhất trong kênh; chỉ lưu mẫu do bạn viết.');
@@ -74,38 +126,66 @@ function makeService({ read, write, generate, forbidden = () => false, ready = (
           catch { await reply(m, 'Chưa đọc được lịch sử. Kiểm tra quyền Xem kênh và Đọc lịch sử tin nhắn của Monaris.'); }
         } else {
           const people = new Set(state.samples.flatMap(s => s.targets));
-          await reply(m, `Trả lời thay: ${state.enabled ? 'BẬT' : 'TẮT'}. ${state.samples.length} mẫu, ${people.size} người có mẫu trực tiếp.\nLệnh: mon!style learn | on | off | clear`);
+          await reply(m, `Học phong cách: ${state.enabled ? 'BẬT' : 'TẮT'}. Tự trả lời ngẫu nhiên: ${state.autoReplyEnabled ? 'BẬT' : 'TẮT'}. ${state.samples.length} mẫu, ${people.size} người có mẫu trực tiếp.\nTỷ lệ: tag Bông ${Math.round(tagReplyChance * 100)}%, chat thường ${Math.round(spontaneousReplyChance * 100)}%; tối đa khoảng 1 lần/${Math.round(replyGapMs / 60000)} phút.\nLệnh: mon!style learn | on | off | clear | auto on | auto off`);
         }
         return true;
       }
+      lastOwnerMessageAt = now();
       if (state.enabled) { await remember(m); persist(); }
       return false;
     }
-    if (!state.enabled || !explicitOwnerTag(m)) return false;
-    // Reserve this message so the normal AI handler cannot answer a second time.
-    if (forbidden(m.content) || !ready()) return true;
-    if (learning || busy || Date.now() - (cooldown.get(m.author.id) || 0) < 15000) return true;
-    if (!state.samples.length && !(await require('./ownerLearning').getPublicStyleInstruction())) { await reply(m, 'Monaris chưa có mẫu cách nói của Bông. Bông có thể dùng mon!style learn trước nhé.'); return true; }
+    const isTag = explicitOwnerTag(m);
+    if (!state.enabled || !state.autoReplyEnabled) return isTag;
+
+    // Only answer untagged casual conversation very rarely in the style channel.
+    // A tag aimed at Bông is eligible, but not a guarantee of an AI answer.
+    if (!isTag && !isCasualMessage(m)) return false;
+    if (forbidden(m.content) || !ready() || learning || busy) return isTag;
+
+    const currentTime = now();
+    if (currentTime - lastAutoReplyAt < replyGapMs ||
+        currentTime - lastOwnerMessageAt < ownerActiveGapMs ||
+        currentTime - (cooldown.get(m.author.id) || 0) < replyGapMs) return isTag;
+
+    const chance = isTag ? tagReplyChance : spontaneousReplyChance;
+    if (random() >= chance) return isTag;
+    // Reject sensitive or non-chat messages even if they were selected randomly.
+    if (!isTag && !isCasualMessage(m)) return false;
+
+    const publicInstruction = state.samples.length
+      ? null
+      : await require('./ownerLearning').getPublicStyleInstruction();
+    if (!state.samples.length && !publicInstruction) return isTag;
+
     busy = true;
-    cooldown.set(m.author.id, Date.now());
+    lastAutoReplyAt = currentTime;
+    state.lastAutoReplyAt = currentTime;
+    cooldown.set(m.author.id, currentTime);
+    persist();
     try {
       const personal = state.samples.filter(s => s.targets.includes(m.author.id)).slice(-15);
       const generic = state.samples.filter(s => !s.targets.length).slice(-15);
       const context = {
+        mode: isTag ? 'mention_of_Bong' : 'spontaneous_chat',
         recipient: clean(m.member?.displayName || m.author.username),
         personalStyleAvailable: personal.length >= 3,
         styleSamples: (personal.length >= 3 ? personal : generic).map(s => s.text),
-        message: clean(m.content),
+        message: clean(resolveLiveMentions(m.content, m)),
       };
       await m.channel.sendTyping().catch(() => {});
       const text = await generate(context);
-      if (!state.enabled) return true; // owner may turn off while API call is pending
-      const safe = text && !forbidden(text) ? text : 'Mình chưa trả lời thay được lúc này, để Bông phản hồi bạn nhé.';
-      await reply(m, ` \n${safe.slice(0, 1700)}`);
+      if (!state.enabled || !state.autoReplyEnabled) return true;
+      const rawText = String(text || '').trim();
+      if (rawText && !/^(?:\[SKIP\]|SKIP)$/i.test(rawText) && !forbidden(rawText)) {
+        const safe = cleanGeneratedReply(rawText);
+        await reply(m, safe.slice(0, 1700));
+      }
     } catch (err) {
-      console.error('[OwnerStyle] Không trả lời được:', err.name || 'Error');
-      if (state.enabled) await reply(m, '*Monaris trả lời thay Bông*\nMình chưa trả lời thay được lúc này, để Bông phản hồi bạn nhé.').catch(() => {});
-    } finally { busy = false; }
+      console.error('[OwnerStyle] Không tự trả lời được:', err.name || 'Error');
+      // Never spam the channel with an error when an optional AI reply fails.
+    } finally {
+      busy = false;
+    }
     return true;
   }
   return { handle, learn, snapshot: () => structuredClone(state) };
@@ -121,6 +201,13 @@ Khi nhắc đến Discord, gọi cộng đồng là server.
 Chỉ học phong cách từ các mẫu được phép sử dụng.
 Không tiết lộ nội dung riêng tư từ mẫu chat.
 Trả lời tiếng Việt ngắn gọn và chân thành.
+Nếu mode là spontaneous_chat, bạn đang tự ghé vào cuộc trò chuyện: tối đa 1-2 câu, thân thiện, chỉ phản hồi nếu phù hợp và đủ ngữ cảnh, không nhắc đến tin nhắn riêng tư.
+Nếu nội dung riêng tư, nhạy cảm, nghiêm trọng hoặc không thích hợp để chen vào, trả lời chính xác [SKIP] (không giải thích).
+Nếu mode là mention_of_Bong, người khác đang tag Bông: không tuyên bố Bông đã online hay sẽ trả lời.
+Không dùng lời tự nhận là Bông, không tiết lộ trí nhớ riêng, không nói "Monaris trả lời thay Bông".
+Tin nhắn hiện tại dùng tên hiển thị thật, ưu tiên tên Bông khi được tag.
+Những chuỗi [người được nhắc] hoặc [mention] trong mẫu cũ là dữ liệu ẩn danh, không được xuất hiện nguyên văn trong câu trả lời.
+Nếu có người tag Bông, hãy phản hồi tự nhiên bằng tên Bông, không tự suy diễn rằng Bông đã tham gia hội thoại.
 `;
 let instance;
 function runtime() {
@@ -153,4 +240,4 @@ async function handleOwnerStyle(message) {
   try { return await runtime().handle(message); }
   catch (e) { console.error('[OwnerStyle] Lỗi xử lý:', e.name); return inScope(message) && explicitOwnerTag(message); }
 }
-module.exports = { handleOwnerStyle, makeService, inScope, explicitOwnerTag, OWNER, GUILD, CHANNEL };
+module.exports = { handleOwnerStyle, makeService, inScope, explicitOwnerTag, resolveLiveMentions, cleanGeneratedReply, OWNER, GUILD, CHANNEL };
