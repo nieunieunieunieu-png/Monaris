@@ -548,7 +548,9 @@ const isBong =
         return;
       }
 
-      const reply = await getKeywordReply(keyword, response, message.content, message.author.id, message.guild, message.channelId, message.id);
+      const reply = message.author.id === '1398428399357268068' && isGoiBotKeyword
+        ? (Math.random() < 0.5 ? 'Monaris đây, chủ nhân gọi Monaris ạ?' : 'Monaris nghe nè bé, bé cần gì?')
+        : await getKeywordReply(keyword, response, message.content, message.author.id, message.guild, message.channelId, message.id);
 
       try {
         await sendHumanLikeReply(message.channel, reply, { guild: message.guild });
