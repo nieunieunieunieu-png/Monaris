@@ -16,7 +16,8 @@ const num = (v, def, { min = -Infinity, int = false } = {}) => {
   return int ? Math.floor(n) : n;
 };
 
-const CONG_DUC_ENABLED = bool(process.env.CONG_DUC_ENABLED, 'true');
+// Công Đức đã được gỡ khỏi phiên Monaris này: giữ config để các module cũ không lỗi import.
+const CONG_DUC_ENABLED = false;
 const CONG_DUC_CHANNEL_ID = process.env.CONG_DUC_CHANNEL_ID || '';
 // Khởi động bot: gửi lại tin Sảnh mới (xoá tin cũ) cho nằm cuối kênh. ENV CONG_DUC_HALL_RESEND_ON_START=false để giữ tin cũ.
 const CONG_DUC_HALL_RESEND_ON_START = bool(process.env.CONG_DUC_HALL_RESEND_ON_START, 'true');
