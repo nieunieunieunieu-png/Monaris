@@ -96,6 +96,7 @@ require('./activityLog/logSearch'); // lệnh /logtim (Bông)
 require('./keywordFilter'); // đăng ký TRƯỚC các handler khác để xoá tin nhạy cảm sớm nhất có thể
 require('./antiSpam'); // chống spam tin giống nhau ở kênh ANTISPAM_CHANNEL_IDS: cảnh báo -> cấm chat -> ghi tab "Spam Chat"
 require('./commands/messageCommands');
+require('./commands/shutdown').installShutdownListener();
 require('./commands/slashCommands');
 require('./character'); // Pick Role + Character Profiles
 require('./character');
