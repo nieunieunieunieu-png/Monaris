@@ -9,7 +9,7 @@ const message = content => ({ content });
 test('interaction probabilities match settings', () => {
   assert.equal(policy.BONG_TAG_REPLY_CHANCE, 0.5);
   assert.equal(policy.NORMAL_CHAT_REPLY_CHANCE, 0.2);
-  assert.equal(policy.NORMAL_CHAT_REACT_CHANCE, 1);
+  assert.equal(policy.NORMAL_CHAT_REACT_CHANCE, 0.5);
 });
 
 test('normal conversation is eligible', () => {
