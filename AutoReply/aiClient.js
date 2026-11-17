@@ -52,7 +52,8 @@ const MAX_REPLY_LENGTH = 1900;
 const PRIVATE_CHAT_CHANNEL_ID = '1566701909270601758';
 
 const MONARIS_IDENTITY_RULE =
-  'Bạn là Monaris, một bot AI. Khi trả lời thay hoặc hỗ trợ chủ bot, ' +
+  'Bạn là Monaris, một bot AI. LUÔN tự xưng là Monaris. Với thành viên thường gọi họ là bạn. ' +
+  'Với đúng chủ bot gọi họ là chủ nhân hoặc bé. Khi trả lời thay hoặc hỗ trợ chủ bot, ' +
   'không được tự nhận mình là Mai hoặc khẳng định chính Mai đang nhắn. ' +
   'Không tiết lộ nội dung hội thoại của kênh riêng sang kênh khác.';
 
@@ -114,8 +115,8 @@ async function askGemini(
   // sheet thành viên.
   
 const creatorNote = memberInfo && memberInfo.isCreator
-  ? 'Người đang chat là Bông, chủ bot Monaris. ' +
-    'Chỉ gọi người này là Bông. ' +
+  ? 'Người đang chat là chủ bot Monaris. ' +
+    'Chỉ gọi người này là chủ nhân hoặc bé; Monaris tự xưng là Monaris. ' +
     'Không dùng tên thật hoặc danh xưng cũ. ' +
     'Trò chuyện tự nhiên, thân thiết, không quá trang trọng. '
   : '';
@@ -129,7 +130,7 @@ const creatorNote = memberInfo && memberInfo.isCreator
     String(chatHistory?.channelId || '') === PRIVATE_CHAT_CHANNEL_ID &&
     memberInfo?.isCreator
       ? 'QUY TẮC RIÊNG CHO KÊNH NÀY: Bạn đang trò chuyện với chủ bot. ' +
-        'Hãy gọi người ấy là "bé", trò chuyện tự nhiên và thân mật. ' +
+        'Hãy gọi người ấy là "chủ nhân" hoặc "bé", trò chuyện tự nhiên và thân mật. ' +
         'Không gọi là "Sếp" trong kênh này. '
       : '';
 
@@ -256,8 +257,11 @@ const creatorNote = memberInfo && memberInfo.isCreator
   // (xem temperaturePolicy.js). Persona dùng bản có few-shot mẫu giọng.
   const temperature = await pickTemperature(userRequest, { useSearch });
   const ownerMemory = await require('./ownerLearning').getPrivateInstruction({ channelId, userId: requesterId });
+  const speakerRule = String(requesterId) === require('./bongPersona').OWNER_ID || memberInfo?.isCreator
+    ? '\nQUY TẮC XƯNG HÔ ƯU TIÊN: Bạn tự xưng Monaris, gọi người hỏi là chủ nhân hoặc bé.'
+    : '\nQUY TẮC XƯNG HÔ ƯU TIÊN: Bạn tự xưng Monaris, gọi người hỏi là bạn. Không gọi là chủ nhân hoặc bé.';
   const rawText = await callGeminiWithFallback(finalPrompt, {
-    systemInstruction: CHAT_SYSTEM_INSTRUCTION + ownerMemory + require('../admin/control/settings').prompt() + '\n' + MONARIS_IDENTITY_RULE,
+    systemInstruction: CHAT_SYSTEM_INSTRUCTION + ownerMemory + require('../admin/control/settings').prompt() + '\n' + MONARIS_IDENTITY_RULE + speakerRule,
     temperature,
   });
 
@@ -267,7 +271,7 @@ const creatorNote = memberInfo && memberInfo.isCreator
   if (!rawText) return null;
 
   let finalText =
-    require('./bongPersona').normalizeReply(rawText);
+    require('./bongPersona').normalizeReply(rawText, requesterId);
   if (useSearch && sourceLinks.length) {
     // Bọc link trong <...> — cú pháp Discord để KHÔNG tự tạo embed/preview
     // (ảnh thu nhỏ, tiêu đề trang...) cho link đó, chỉ hiện link trần dạng
