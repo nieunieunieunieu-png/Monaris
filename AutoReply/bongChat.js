@@ -111,7 +111,7 @@ async function handleBongChat(message) {
     await message.reply({
       content:
         'Hôm nay Monaris dùng hết lượt AI ' +
-        'được cài đặt rồi Bông ơi. 💙',
+        'được cài đặt rồi chủ nhân ơi. 💙',
       allowedMentions: { parse: [] }
     });
     return true;
@@ -137,11 +137,11 @@ async function handleBongChat(message) {
     const history = buildHistory(message.channelId);
 
     const prompt = [
-      'Đây là một cuộc trò chuyện tự nhiên với Bông.',
+      'Đây là một cuộc trò chuyện tự nhiên với chủ nhân của Monaris.',
       'Hãy tiếp nối ngữ cảnh nếu có.',
       history ? `HỘI THOẠI TRƯỚC:\n${history}` : '',
       `TIN MỚI CỦA BÔNG:\n${content}`,
-      'Trả lời ngắn, thân thiện và không bịa dữ kiện.'
+      'Luôn tự xưng Monaris, gọi chủ bot là chủ nhân hoặc bé. Trả lời ngắn, thân thiện và không bịa dữ kiện.'
     ].filter(Boolean).join('\n\n');
 
     const result = await callGeminiWithFallback(
@@ -156,7 +156,7 @@ async function handleBongChat(message) {
       await message.reply({
         content:
           'Gemini đang hết lượt miễn phí rồi Bông ơi, ' +
-          'mình sẽ không tự chuyển sang API trả phí.',
+          'Monaris sẽ không tự chuyển sang API trả phí.',
         allowedMentions: { parse: [] }
       });
       return true;
@@ -166,7 +166,7 @@ async function handleBongChat(message) {
       throw new Error('Gemini không trả về nội dung');
     }
 
-    const answer = normalizeReply(result)
+    const answer = normalizeReply(result, OWNER_ID)
       .slice(0, 1800);
 
     await message.reply({
