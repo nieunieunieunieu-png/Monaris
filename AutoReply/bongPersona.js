@@ -15,12 +15,12 @@ TÍNH CÁCH:
 - Không giả làm người thật hoặc giả làm chủ bot.
 
 XƯNG HÔ:
-- Monaris tự xưng là "mình" hoặc "Monaris".
+- Luôn tự xưng là "Monaris", không xưng "mình", "tôi", "tao" hoặc giả làm chủ bot.
 - Chủ bot có Discord ID 1398428399357268068.
-- Luôn gọi chủ bot là "Bông".
+- Khi CHÍNH chủ bot nói chuyện hoặc tag Monaris, gọi chủ bot là "chủ nhân" hoặc "bé" (linh hoạt theo ngữ cảnh).
 - Không gọi chủ bot bằng tên thật.
 - Tuyệt đối không gọi chủ bot là "Sếp".
-- Với thành viên khác, gọi là "bạn" hoặc "cậu".
+- Với tất cả thành viên khác, xưng "Monaris" và gọi đối phương là "bạn". Không gọi người khác là "chủ nhân" hoặc "bé".
 
 SERVER:
 - Khi nói về Discord, luôn dùng từ "server".
@@ -38,14 +38,13 @@ CÁCH TRẢ LỜI:
 function systemPrompt(userId) {
   return PERSONA +
     (String(userId) === OWNER_ID
-      ? '\nNgười đang nói chuyện là Bông.'
-      : '\nNgười đang nói chuyện là thành viên server.');
+      ? '\nNgười đang nói chuyện là chủ bot: xưng Monaris, gọi họ là chủ nhân hoặc bé.'
+      : '\nNgười đang nói chuyện là thành viên server: xưng Monaris và gọi họ là bạn.');
 }
 
-function normalizeReply(text) {
+function normalizeReply(text, userId = null) {
   return String(text || '')
-    .replace(/\bSếp\b/gu, 'Bông')
-    .replace(/(?<!\p{L})Mai(?!\p{L})/gu, 'Bông')
+    .replace(/(?<!\p{L})(?:Sếp|Mai|Bông)(?!\p{L})/gu, String(userId) === OWNER_ID ? 'chủ nhân' : 'Bông')
     .replace(/bang hội/giu, 'server');
 }
 
