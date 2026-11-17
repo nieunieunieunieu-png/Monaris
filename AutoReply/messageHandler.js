@@ -43,6 +43,7 @@ const {
 } = require('./reactions');
 const { isOnAutoReplyCooldown, isRepeatedBotMention } = require('./cooldowns');
 const { fetchRecentChannelMessages } = require('./channelContext');
+const { isIgnoredAutoMessage, NORMAL_CHAT_REPLY_CHANCE, NORMAL_CHAT_REACT_CHANCE } = require('./interactionPolicy');
 
 // FIX (bug "chọn nhầm tên đầu tiên trong danh sách Bang"): khi người tag/chat
 // với bot CHƯA có trong tab "Bang"/"ChatGlobal" (chưa từng /setprofile),
@@ -77,6 +78,9 @@ client.on(Events.MessageCreate, async (message) => {
   // Bỏ qua tin nhắn bắt đầu bằng "mon!" — đó là namespace của các lệnh
   // trong commands/messageCommands.js, không để keyword ở đây đụng vào.
   if (content.startsWith('mon!')) return;
+  // Chặn tự động trả lời / reaction với lệnh, link hoặc nội dung nhạy cảm.
+  // Listener lệnh Discord khác vẫn xử lý độc lập.
+  if (isIgnoredAutoMessage(message)) return;
 
   // Reply vào bài Check Gear của bot (hoặc vào tin của bot trong chủ đề thảo
   // luận bài đó) là để người với người bàn với nhau, checkGear/discussion.js
@@ -478,12 +482,8 @@ const isBong =
         // Đang cooldown — không chat được thì thả react thay thế, giống
         // hệt cơ chế bot-mention ở trên, rồi thử tiếp các mention khác
         // trong tin nhắn (nếu có) thay vì return luôn.
-        try {
-          await reactWithRandomServerEmoji(message);
-        } catch (error) {
-          console.error(`Không thể thả react báo cooldown mention (user ${userId}):`, error.message);
-        }
-        continue;
+        await message.reply({ content: 'Monaris đang bận, liên hệ lại sau nhé', allowedMentions: { repliedUser: false } }).catch(() => {});
+        return;
       }
 
       const reply = Array.isArray(response)
@@ -531,12 +531,8 @@ const isBong =
       if (isOnAutoReplyCooldown(cooldownKey, cooldownMs)) {
         // Đang cooldown — không chat được thì thả react thay thế, rồi thử
         // tiếp các từ khóa khác trong tin nhắn (nếu có) thay vì return luôn.
-        try {
-          await reactWithRandomServerEmoji(message);
-        } catch (error) {
-          console.error(`Không thể thả react báo cooldown keyword "${keyword}":`, error.message);
-        }
-        continue;
+        await message.reply({ content: 'Monaris đang bận, liên hệ lại sau nhé', allowedMentions: { repliedUser: false } }).catch(() => {});
+        return;
       }
 
       // Thỉnh thoảng chỉ thả react qua loa thay vì gõ hẳn 1 câu — xem giải
@@ -563,21 +559,50 @@ const isBong =
     }
   }
 
-  // 3) Tin nhắn chạy tới đây nghĩa là KHÔNG khớp bất kỳ trigger nào ở trên
-  // (không phải gọi bot/mention/từ khóa/reply-to-bot) — tức 1 tin nhắn bình
-  // thường không liên quan gì tới bot. Rất hiếm khi (SPONTANEOUS_REACT_CHANCE)
-  // bot tự buông 1 react vu vơ vào đó, giống bạn bè thật thỉnh thoảng thả
-  // emoji hưởng ứng dù không được nhắc tới, thể hiện đang có mặt đọc chat
-  // chứ không phải chỉ "sống dậy" lúc bị gọi. Không react tin nhắn quá ngắn
-  // (dễ vô nghĩa, vd chỉ 1 emoji/1 ký tự) hoặc react cảm xúc buồn (để không
-  // vô tình "hóng chuyện" khi ai đó đang thật sự tâm sự chuyện buồn).
-  if (message.content.trim().length >= 8 && !detectSadSentiment(message.content) && Math.random() < SPONTANEOUS_REACT_CHANCE) {
+  // 3) Trò chuyện bình thường: 100% thử react và 20% tham gia bằng AI.
+  // Chỉ đến đây khi không có lệnh, trigger, mention, hay yêu cầu riêng.
+  // React là best-effort: thiếu quyền Add Reactions không làm chặn chat.
+  if (Math.random() < NORMAL_CHAT_REACT_CHANCE) {
     try {
       await reactWithRandomServerEmoji(message);
     } catch (error) {
-      console.error('Không thể thả react vu vơ:', error.message);
+      console.error('Không thể thả react trò chuyện bình thường:', error.message);
     }
   }
+
+  if (Math.random() < NORMAL_CHAT_REPLY_CHANCE) {
+    try {
+      const memberInfo = withDiscordDisplayNameFallback(
+        await getMemberInfoAnySource(message.author.id),
+        message
+      );
+      const memberDirectory = enrichMemberDirectoryWithDiscordNames(
+        await getCombinedMemberDirectory(), message.guild
+      );
+      const channelMessages = await fetchRecentChannelMessages(message.channel, {
+        beforeMessageId: message.id,
+        memberDirectory,
+      });
+      const resolvedContent = resolveMentionsToNames(message.content, message, memberDirectory);
+      const aiReply = await askGemini(
+        `Mọi người đang trò chuyện bình thường. Tin nhắn gần nhất: "${resolvedContent}". ` +
+        `Chỉ góp một câu ngắn, tự nhiên, phù hợp mạch hội thoại như bạn bè. ` +
+        `Không chen vào nội dung riêng tư, không tự xưng là Bông, tối đa ${AI_REPLY_MAX_LENGTH} ký tự.`,
+        {
+          memberInfo, memberDirectory, channelMessages,
+          chatHistory: getRecentChatHistoryForChannel(message.channelId),
+          scrimData, bcData, channelId: message.channelId,
+          requesterId: message.author.id,
+        }
+      );
+      if (aiReply) {
+        await sendHumanLikeReply(message.channel, aiReply, { guild: message.guild });
+      }
+    } catch (error) {
+      console.error('Không thể tham gia trò chuyện bình thường:', error.message);
+    }
+  }
+
 });
 
 module.exports = {
