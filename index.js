@@ -76,7 +76,6 @@ const { ensureKnowledgeImageSheetExists } = require('./googleSheets/knowledgeIma
 const { startKeywordFilter } = require('./keywordFilter');
 const { startAntiSpam } = require('./antiSpam');
 const { startLevel, LEVEL_SLASH_COMMANDS } = require('./level');
-const { startCongDuc, CONG_DUC_SLASH_COMMANDS } = require('./congDuc');
 const { HOSO_SLASH_COMMANDS, startManualAchievements } = require('./hoso');
 const { SHOP_SLASH_COMMANDS, startShop } = require('./shop'); // cửa hàng khung hồ sơ (/shopkhung, /shopcap)
 const { CUSTOM_ACHIEVEMENT_SLASH_COMMANDS, startCustomAchievements } = require('./hoso/customAchievement');
@@ -355,7 +354,6 @@ for (const command of PHOBAN12_SLASH_COMMANDS) {
       // Level/EXP: tạo tab Level + Cấu Hình EXP + Bảng Cấp Độ, nạp dữ liệu rồi bật vòng ghi Sheet theo lô.
       await deferredStep('startLevel', () => startLevel());
       // Farm Công Đức: nạp tab "Công Đức", bật tích voice (phòng bot treo) + tiếng Cốc Cốc. Phải SAU startLevel (Đốt hương cần Level đã nạp).
-      await deferredStep('startCongDuc', () => startCongDuc());
       // Pick Role bằng react (hệ phái + hoạt động): nạp tab "Pick Role", đăng/đồng bộ 2 tin trong PICK_ROLE_CHANNEL_ID.
       // Role team (xếp đội hình): tạo tab "Team Role" + kiểm tra 5 role (tên/quyền) và chỉ log cảnh báo, không tự sửa.
       // Cửa hàng khung hồ sơ: tạo tab "Shop Khung" + nạp khung đã sở hữu (khung shop_* chỉ chọn được khi đã mua, xem hoso/frame/levelRules.js).
