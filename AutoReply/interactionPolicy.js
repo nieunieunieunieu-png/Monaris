@@ -14,7 +14,7 @@ function isIgnoredAutoMessage(message) {
 
 const BONG_TAG_REPLY_CHANCE = 0.5;
 const NORMAL_CHAT_REPLY_CHANCE = 0.2;
-const NORMAL_CHAT_REACT_CHANCE = 1;
+const NORMAL_CHAT_REACT_CHANCE = 0.5;
 
 module.exports = {
   isIgnoredAutoMessage,
