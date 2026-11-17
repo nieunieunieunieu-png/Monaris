@@ -8,7 +8,6 @@
 // Chỉ role Bông hoặc ADMIN_USER_ID dùng được.
 
 const { BONG_ROLE_ID, ADMIN_USER_ID, KNOWLEDGE_ENABLED, KNOWLEDGE_SHEET_NAME } = require('../config');
-const { runBackup, getBackupInfo } = require('../backup');
 const { getKnowledgeEntries, getKnowledgeCacheInfo } = require('../googleSheets/knowledgeSheet');
 const { findMatchedEntries } = require('../AutoReply/knowledgeBlock');
 const { buildSummary: buildSpamSummary } = require('../antiSpam');
@@ -42,25 +41,8 @@ function formatBackupResult(result) {
   return lines.join('\n').slice(0, 1900);
 }
 
-async function handleBackupCommand(message, args) {
-  if (args[0] && args[0].toLowerCase() === 'info') {
-    const info = getBackupInfo();
-    const last = info.lastResult;
-    await message.reply(
-      [
-        `💾 **Sao lưu Sheet → Drive**: ${info.enabled ? 'đang bật' : info.hasFolder ? 'đang tắt' : 'CHƯA cấu hình (thiếu BACKUP_DRIVE_FOLDER_ID)'}`,
-        `Chạy hằng ngày lúc ${info.hourVn}h (giờ VN), giữ ${info.keepDays} ngày, ${info.spreadsheetCount} spreadsheet.`,
-        last
-          ? `Lượt gần nhất (${last.reason}, ${formatAgo(last.at)}): ${last.results.filter((r) => r.state === 'ok').length} bản mới, ${last.results.filter((r) => r.state === 'error').length} lỗi.`
-          : 'Chưa có lượt nào kể từ lần khởi động này.',
-      ].join('\n')
-    );
-    return;
-  }
-
-  const notice = await message.reply('⏳ Đang sao lưu các Sheet sang Drive, có thể mất vài phút...');
-  const result = await runBackup({ reason: `mon!backup bởi ${message.author.username}` });
-  await notice.edit(formatBackupResult(result)).catch(() => message.reply(formatBackupResult(result)));
+async function handleBackupCommand(message) {
+  await message.reply('Tính năng sao lưu tự động đã được gỡ khỏi bản Monaris này.');
 }
 
 async function handleKnowledgeCommand(message, args) {
