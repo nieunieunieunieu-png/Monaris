@@ -73,7 +73,6 @@ const { startTempVoice } = require('./tempVoice');
 const { ensureNmImageSheetExists, NMIMAGE_SLASH_COMMANDS } = require('./nmImage');
 const { ensureKnowledgeSheetExists, getKnowledgeEntries } = require('./googleSheets/knowledgeSheet');
 const { ensureKnowledgeImageSheetExists } = require('./googleSheets/knowledgeImageSheet');
-const { startDailyBackup } = require('./backup');
 const { startKeywordFilter } = require('./keywordFilter');
 const { startAntiSpam } = require('./antiSpam');
 const { startLevel, LEVEL_SLASH_COMMANDS } = require('./level');
@@ -407,7 +406,6 @@ for (const command of PHOBAN12_SLASH_COMMANDS) {
     }
 
     // Sao lưu Google Sheet sang Drive hằng ngày (cần ENV BACKUP_DRIVE_FOLDER_ID, xem config/backup.js).
-    await deferredStep('startDailyBackup', () => startDailyBackup());
 
     // Refresh sheet log/backup RoleAutoVote từ role thực tế trên Discord —
     // có thể gọi nhiều request nếu server đông thành viên, không urgent.
