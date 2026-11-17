@@ -95,6 +95,7 @@ require('./keywordFilter'); // đăng ký TRƯỚC các handler khác để xoá
 require('./antiSpam'); // chống spam tin giống nhau ở kênh ANTISPAM_CHANNEL_IDS: cảnh báo -> cấm chat -> ghi tab "Spam Chat"
 require('./commands/messageCommands');
 require('./commands/shutdown').installShutdownListener();
+require('./commands/presence').installStatusListener();
 require('./commands/slashCommands');
 require('./character'); // Pick Role + Character Profiles
 require('./character');
