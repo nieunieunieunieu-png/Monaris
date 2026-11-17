@@ -1,6 +1,7 @@
 function getSlashCommands() {
   const groups = [
     ['./shutdown', 'SHUTDOWN_SLASH_COMMANDS'],
+    ['./presence', 'STATUS_SLASH_COMMANDS'],
     ['./help', 'SLASH_COMMANDS'], ['./about', 'ABOUT_SLASH_COMMANDS'],
     ['../nmImage', 'NMIMAGE_SLASH_COMMANDS'], ['../level', 'LEVEL_SLASH_COMMANDS'],
     ['../hoso', 'HOSO_SLASH_COMMANDS'], ['../shop', 'SHOP_SLASH_COMMANDS'],
