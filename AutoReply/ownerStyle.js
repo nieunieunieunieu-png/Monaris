@@ -143,7 +143,6 @@ function makeService({
     if (forbidden(m.content) || !ready() || learning || busy) return isTag;
 
     const currentTime = now();
-    const lastActivity = Math.max(lastAutoReplyAt, lastOwnerMessageAt);
     if (currentTime - lastAutoReplyAt < replyGapMs ||
         currentTime - lastOwnerMessageAt < ownerActiveGapMs ||
         currentTime - (cooldown.get(m.author.id) || 0) < replyGapMs) return isTag;
@@ -177,7 +176,7 @@ function makeService({
       const text = await generate(context);
       if (!state.enabled || !state.autoReplyEnabled) return true;
       const rawText = String(text || '').trim();
-      if (rawText && !/^(?:\\[SKIP\\]|SKIP)$/i.test(rawText) && !forbidden(rawText)) {
+      if (rawText && !/^(?:\[SKIP\]|SKIP)$/i.test(rawText) && !forbidden(rawText)) {
         const safe = cleanGeneratedReply(rawText);
         await reply(m, safe.slice(0, 1700));
       }
