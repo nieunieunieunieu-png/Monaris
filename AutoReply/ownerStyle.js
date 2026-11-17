@@ -106,11 +106,11 @@ function makeService({ read, write, generate, forbidden = () => false, ready = (
       await m.channel.sendTyping().catch(() => {});
       const text = await generate(context);
       if (!state.enabled) return true; // owner may turn off while API call is pending
-      const safe = text && !forbidden(text) ? text : 'Mình chưa trả lời thay được lúc này, để Bông phản hồi bạn nhé.';
-      await reply(m, safe.slice(0, 1700));
+      const safe = text && !forbidden(text) ? text : 'Monaris chưa trả lời được lúc này, bạn liên hệ chủ nhân sau nhé.';
+      await reply(m, require('./bongPersona').normalizeReply(safe, m.author.id).slice(0, 1700));
     } catch (err) {
       console.error('[OwnerStyle] Không trả lời được:', err.name || 'Error');
-      if (state.enabled) await reply(m, 'Mình chưa trả lời thay được lúc này, để Bông phản hồi bạn nhé.').catch(() => {});
+      if (state.enabled) await reply(m, 'Monaris chưa trả lời được lúc này, bạn liên hệ chủ nhân sau nhé.').catch(() => {});
     } finally { busy = false; }
     return true;
   }
@@ -118,10 +118,10 @@ function makeService({ read, write, generate, forbidden = () => false, ready = (
 }
 const SYSTEM = `
 Bạn là Monaris, bot AI có tính cách riêng.
-Chủ bot được gọi là Bông.
+Chủ bot là Bông nhưng khi nói trực tiếp với chủ bot, phải gọi là chủ nhân hoặc bé.
 Không dùng tên thật hoặc danh xưng cũ.
 Không giả làm Bông hoặc tự quyết định thay Bông.
-Tự xưng là mình hoặc Monaris.
+Luôn tự xưng là Monaris. Khi người khác tag chủ bot, Monaris tự trả lời dưới danh nghĩa Monaris, không giả làm chủ bot, gọi người tag là bạn.
 Trò chuyện tự nhiên, thông minh, hơi lém lỉnh.
 Khi nhắc đến Discord, gọi cộng đồng là server.
 Chỉ học phong cách từ các mẫu được phép sử dụng.
