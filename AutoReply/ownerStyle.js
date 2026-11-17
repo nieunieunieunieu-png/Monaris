@@ -4,6 +4,7 @@ const OWNER = '1398428399357268068';
 const GUILD = '1566691700850688013';
 const CHANNEL = '1566698252567318538';
 const fs = require('node:fs');
+const { isIgnoredAutoMessage, BONG_TAG_REPLY_CHANCE } = require('./interactionPolicy');
 const path = require('node:path');
 const FILE = path.join(__dirname, '..', 'data', 'owner-style.json');
 function inScope(m) { return m.guildId === GUILD && m.channelId === CHANNEL; }
@@ -83,8 +84,13 @@ function makeService({ read, write, generate, forbidden = () => false, ready = (
     }
     if (!state.enabled || !explicitOwnerTag(m)) return false;
     // Reserve this message so the normal AI handler cannot answer a second time.
-    if (forbidden(m.content) || !ready()) return true;
-    if (learning || busy || Date.now() - (cooldown.get(m.author.id) || 0) < 15000) return true;
+    if (forbidden(m.content) || isIgnoredAutoMessage(m) || !ready()) return true;
+    if (learning || busy || Date.now() - (cooldown.get(m.author.id) || 0) < 15000) {
+      await reply(m, 'Monaris đang bận, liên hệ lại sau nhé').catch(() => {});
+      return true;
+    }
+    // 50% phản hồi khi thành viên tag Bông, 50% giữ im lặng.
+    if (Math.random() >= BONG_TAG_REPLY_CHANCE) return true;
     if (!state.samples.length && !(await require('./ownerLearning').getPublicStyleInstruction())) { await reply(m, 'Monaris chưa có mẫu cách nói của Bông. Bông có thể dùng mon!style learn trước nhé.'); return true; }
     busy = true;
     cooldown.set(m.author.id, Date.now());
@@ -101,10 +107,10 @@ function makeService({ read, write, generate, forbidden = () => false, ready = (
       const text = await generate(context);
       if (!state.enabled) return true; // owner may turn off while API call is pending
       const safe = text && !forbidden(text) ? text : 'Mình chưa trả lời thay được lúc này, để Bông phản hồi bạn nhé.';
-      await reply(m, ` \n${safe.slice(0, 1700)}`);
+      await reply(m, safe.slice(0, 1700));
     } catch (err) {
       console.error('[OwnerStyle] Không trả lời được:', err.name || 'Error');
-      if (state.enabled) await reply(m, '*Monaris trả lời thay Bông*\nMình chưa trả lời thay được lúc này, để Bông phản hồi bạn nhé.').catch(() => {});
+      if (state.enabled) await reply(m, 'Mình chưa trả lời thay được lúc này, để Bông phản hồi bạn nhé.').catch(() => {});
     } finally { busy = false; }
     return true;
   }
