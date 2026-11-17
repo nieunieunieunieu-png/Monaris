@@ -14,6 +14,23 @@ function clean(s) {
     .replace(/AIza[\w-]+|[\w-]{24,}\.[\w-]{6,}\.[\w-]{20,}/g, '[đã ẩn khóa]')
     .slice(0, 700);
 }
+// Resolve live Discord mentions before passing the current message to Gemini.
+function resolveLiveMentions(text, message) {
+  return String(text || '').replace(/<@!?(\d+)>/g, (raw, id) => {
+    if (id === OWNER) return '@Bông';
+    const member = message.mentions?.members?.get(id);
+    const user = message.mentions?.users?.get(id);
+    const label = member?.displayName || user?.globalName || user?.username;
+    return label ? '@' + clean(label).replace(/[\r\n]/g, ' ') : '@một thành viên';
+  });
+}
+// Archived style samples are anonymized, but live replies should never
+// print their anonymous placeholders verbatim.
+function cleanGeneratedReply(text) {
+  return String(text || '')
+    .replace(/\[(?:người được nhắc|mention)\]/gi, 'Bông')
+    .replace(/<@!?\d+>/g, 'Bông');
+}
 function makeService({ read, write, generate, forbidden = () => false, ready = () => true }) {
   let state = read() || { enabled: true, samples: [] };
   state.samples = Array.isArray(state.samples) ? state.samples : [];
@@ -95,12 +112,14 @@ function makeService({ read, write, generate, forbidden = () => false, ready = (
         recipient: clean(m.member?.displayName || m.author.username),
         personalStyleAvailable: personal.length >= 3,
         styleSamples: (personal.length >= 3 ? personal : generic).map(s => s.text),
-        message: clean(m.content),
+        message: clean(resolveLiveMentions(m.content, m)),
       };
       await m.channel.sendTyping().catch(() => {});
       const text = await generate(context);
       if (!state.enabled) return true; // owner may turn off while API call is pending
-      const safe = text && !forbidden(text) ? text : 'Mình chưa trả lời thay được lúc này, để Bông phản hồi bạn nhé.';
+      const safe = text && !forbidden(text)
+        ? cleanGeneratedReply(text)
+        : 'Mình chưa trả lời thay được lúc này, để Bông phản hồi bạn nhé.';
       await reply(m, ` \n${safe.slice(0, 1700)}`);
     } catch (err) {
       console.error('[OwnerStyle] Không trả lời được:', err.name || 'Error');
@@ -121,6 +140,9 @@ Khi nhắc đến Discord, gọi cộng đồng là server.
 Chỉ học phong cách từ các mẫu được phép sử dụng.
 Không tiết lộ nội dung riêng tư từ mẫu chat.
 Trả lời tiếng Việt ngắn gọn và chân thành.
+Tin nhắn hiện tại dùng tên hiển thị thật, ưu tiên tên Bông khi được tag.
+Những chuỗi [người được nhắc] hoặc [mention] trong mẫu cũ là dữ liệu ẩn danh, không được xuất hiện nguyên văn trong câu trả lời.
+Nếu có người tag Bông, hãy phản hồi tự nhiên bằng tên Bông, không tự suy diễn rằng Bông đã tham gia hội thoại.
 `;
 let instance;
 function runtime() {
@@ -153,4 +175,4 @@ async function handleOwnerStyle(message) {
   try { return await runtime().handle(message); }
   catch (e) { console.error('[OwnerStyle] Lỗi xử lý:', e.name); return inScope(message) && explicitOwnerTag(message); }
 }
-module.exports = { handleOwnerStyle, makeService, inScope, explicitOwnerTag, OWNER, GUILD, CHANNEL };
+module.exports = { handleOwnerStyle, makeService, inScope, explicitOwnerTag, resolveLiveMentions, cleanGeneratedReply, OWNER, GUILD, CHANNEL };
