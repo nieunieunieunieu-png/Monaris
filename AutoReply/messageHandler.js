@@ -485,7 +485,7 @@ const isBong =
         // Đang cooldown — không chat được thì thả react thay thế, giống
         // hệt cơ chế bot-mention ở trên, rồi thử tiếp các mention khác
         // trong tin nhắn (nếu có) thay vì return luôn.
-        await message.reply({ content: 'Monaris đang bận, liên hệ lại sau nhé', allowedMentions: { repliedUser: false } }).catch(() => {});
+        // Khi dang cooldown, im lang thay vi gui them tin nhan dang ban.
         return;
       }
 
